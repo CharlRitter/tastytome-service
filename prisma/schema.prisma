@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model category {
+  id             Int              @id @default(autoincrement())
+  value          String           @db.VarChar(50)
+  recipecategory recipecategory[]
+}
+
+model measurementsystem {
+  id                                                                 Int               @id @default(autoincrement())
+  value                                                              String            @db.VarChar(50)
+  measurementunit                                                    measurementunit[]
+  membersettings_membersettings_measurementsystemTomeasurementsystem membersettings[]  @relation("membersettings_measurementsystemTomeasurementsystem")
+  recipe                                                             recipe[]
+}
+
+model measurementtype {
+  id               Int                @id @default(autoincrement())
+  value            String             @db.VarChar(50)
+  measurementunit  measurementunit[]
+  recipeingredient recipeingredient[]
+}
+
+model measurementunit {
+  id                  Int                @id @default(autoincrement())
+  measurementsystemid Int?
+  measurementtypeid   Int?
+  value               String             @db.VarChar(50)
+  abbreviation        String             @db.VarChar(50)
+  measurementsystem   measurementsystem? @relation(fields: [measurementsystemid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  measurementtype     measurementtype?   @relation(fields: [measurementtypeid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  recipeingredient    recipeingredient[]
+}
+
+model member {
+  id             Int              @id @default(autoincrement())
+  firstname      String           @db.VarChar(50)
+  lastname       String           @db.VarChar(50)
+  emailaddress   String           @db.VarChar(100)
+  password       String           @db.VarChar(100)
+  ispremium      Boolean          @default(false)
+  createdat      DateTime         @default(now()) @db.Timestamp(6)
+  editedat       DateTime         @default(now()) @db.Timestamp(6)
+  membersettings membersettings[]
+  recipe         recipe[]
+}
+
+model membersettings {
+  id                                                                    Int               @id @default(autoincrement())
+  memberid                                                              Int
+  theme                                                                 Int               @default(1)
+  measurementsystem                                                     Int               @default(1)
+  usepantry                                                             Boolean           @default(true)
+  usenegativepantry                                                     Boolean           @default(false)
+  displaynutritionalinformation                                         Boolean           @default(true)
+  createdat                                                             DateTime          @default(now()) @db.Timestamp(6)
+  editedat                                                              DateTime          @default(now()) @db.Timestamp(6)
+  measurementsystem_membersettings_measurementsystemTomeasurementsystem measurementsystem @relation("membersettings_measurementsystemTomeasurementsystem", fields: [measurementsystem], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  member                                                                member            @relation(fields: [memberid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  theme_membersettings_themeTotheme                                     theme             @relation("membersettings_themeTotheme", fields: [theme], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model recipe {
+  id                  Int                 @id @default(autoincrement())
+  memberid            Int
+  title               String              @db.VarChar(100)
+  description         String              @db.VarChar(255)
+  rating              Int?                @default(0)
+  effort              Int?                @default(0)
+  measurementsystemid Int
+  createdat           DateTime            @default(now()) @db.Timestamp(6)
+  editedat            DateTime            @default(now()) @db.Timestamp(6)
+  measurementsystem   measurementsystem   @relation(fields: [measurementsystemid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  member              member              @relation(fields: [memberid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recipecategory      recipecategory[]
+  recipeingredient    recipeingredient[]
+  recipeinstruction   recipeinstruction[]
+  recipetimer         recipetimer[]
+}
+
+model recipecategory {
+  id         Int      @id @default(autoincrement())
+  recipeid   Int
+  categoryid Int
+  createdat  DateTime @default(now()) @db.Timestamp(6)
+  category   category @relation(fields: [categoryid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  recipe     recipe   @relation(fields: [recipeid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model recipeingredient {
+  id                Int             @id @default(autoincrement())
+  recipeid          Int
+  title             String          @db.VarChar(100)
+  measurementtypeid Int
+  measurementunitid Int
+  measurementamount Float
+  createdat         DateTime        @default(now()) @db.Timestamp(6)
+  measurementtype   measurementtype @relation(fields: [measurementtypeid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  measurementunit   measurementunit @relation(fields: [measurementunitid], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  recipe            recipe          @relation(fields: [recipeid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model recipeinstruction {
+  id        Int      @id @default(autoincrement())
+  recipeid  Int
+  title     String   @db.VarChar(100)
+  createdat DateTime @default(now()) @db.Timestamp(6)
+  recipe    recipe   @relation(fields: [recipeid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model recipetimer {
+  id        Int      @id @default(autoincrement())
+  recipeid  Int
+  title     String   @db.VarChar(100)
+  hours     Int?
+  minutes   Int?
+  createdat DateTime @default(now()) @db.Timestamp(6)
+  recipe    recipe   @relation(fields: [recipeid], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model theme {
+  id                                         Int              @id @default(autoincrement())
+  value                                      String           @db.VarChar(50)
+  membersettings_membersettings_themeTotheme membersettings[] @relation("membersettings_themeTotheme")
+}

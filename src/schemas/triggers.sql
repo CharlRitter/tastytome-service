@@ -1,0 +1,8 @@
+-- updateEditedAt Function
+CREATE OR REPLACE FUNCTION updateEditedAt()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.editedAt := CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

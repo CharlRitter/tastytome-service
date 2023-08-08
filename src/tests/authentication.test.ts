@@ -13,7 +13,7 @@ describe('authenticateMember middleware', () => {
 
   const validToken = 'valid_token';
   const memberId = '1';
-  const mockRequestInstance = {};
+  const mockRequestInstance = mockRequest({ headers: {} });
   const jwtMock = jwt as jest.Mocked<typeof import('jsonwebtoken')>;
 
   it('should return 401 if token is missing', async() => {
@@ -68,7 +68,7 @@ describe('authenticateMember middleware', () => {
     };
 
     mockRequestInstance.header = jest.fn().mockReturnValue(validToken);
-    jwtMock.verify.mockReturnValue(validDecodedToken);
+    jwtMock.verify.mockImplementation(() => validDecodedToken);
 
     const request = mockRequest(mockRequestInstance);
     const response = mockResponse();
@@ -91,8 +91,8 @@ describe('authenticateMember middleware', () => {
     const newToken = 'new_refreshed_token';
 
     mockRequestInstance.header = jest.fn().mockReturnValue(validToken);
-    jwtMock.verify.mockReturnValue(soonToExpireDecodedToken);
-    jwtMock.sign.mockReturnValue(newToken);
+    jwtMock.verify.mockImplementation(() => soonToExpireDecodedToken);
+    jwtMock.sign.mockImplementation(() => newToken);
 
     const request = mockRequest(mockRequestInstance);
     const response = mockResponse();
@@ -115,8 +115,8 @@ describe('authenticateMember middleware', () => {
     };
 
     mockRequestInstance.header = jest.fn().mockReturnValue(validToken);
-    jwtMock.verify.mockReturnValue(soonToExpireDecodedToken);
-    jwtMock.sign.mockReturnValue(new Error());
+    jwtMock.verify.mockImplementation(() => soonToExpireDecodedToken);
+    jwtMock.sign.mockImplementation(() => {});
 
     const request = mockRequest(mockRequestInstance);
     const response = mockResponse();
@@ -137,7 +137,7 @@ describe('authenticateMember middleware', () => {
     };
 
     mockRequestInstance.header = jest.fn().mockReturnValue('invalid_token');
-    jwtMock.verify.mockReturnValue(brokenDecodedToken);
+    jwtMock.verify.mockImplementation(() => brokenDecodedToken);
 
     const request = mockRequest(mockRequestInstance);
     const response = mockResponse();

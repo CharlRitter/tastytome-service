@@ -112,7 +112,7 @@ describe('Members', () => {
       createdat: new Date(),
       editedat: new Date()
     });
-    jwtMock.sign.mockReturnValue('mock_token');
+    jwtMock.sign.mockImplementation(() => {});
 
     const response = await createMember(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
 
@@ -291,7 +291,7 @@ describe('Members', () => {
     };
 
     prismaMock.member.findFirst.mockResolvedValue(mockMember);
-    bcryptMocked.compare.mockResolvedValue(true);
+    bcryptMocked.compare.mockImplementation(() => Promise.resolve(true));
     prismaMock.$queryRaw.mockResolvedValue([mockMember]);
 
     const response = await loginMember(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
@@ -321,7 +321,7 @@ describe('Members', () => {
     };
 
     prismaMock.member.findFirst.mockResolvedValue(mockMember);
-    bcryptMocked.compare.mockResolvedValue(false);
+    bcryptMocked.compare.mockImplementation(() => Promise.resolve(false));
     prismaMock.$queryRaw.mockResolvedValue([{ ...mockMember, password: 'wrongpasswordhash' }]);
 
     const response = await loginMember(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
@@ -347,7 +347,7 @@ describe('Members', () => {
   it('should logout a member', async() => {
     const mockRequestInstance = mockRequest({
       ...mockRequestData,
-      header: { Authorization: 'Bearer mock_token' }
+      headers: { Authorization: 'Bearer mock_token' }
     });
 
     mockRequestInstance.header = jest.fn().mockReturnValue('mock_token');
@@ -361,7 +361,7 @@ describe('Members', () => {
   it('should handle error when token is missing while logging out', async() => {
     const mockRequestInstance = mockRequest({
       ...mockRequestData,
-      header: { Authorization: 'Bearer' }
+      headers: { Authorization: 'Bearer' }
     });
 
     mockRequestInstance.header = jest.fn().mockReturnValue('');
@@ -379,7 +379,7 @@ describe('Members', () => {
     };
 
     prismaMock.member.findUnique.mockResolvedValue(mockMember);
-    bcryptMocked.compare.mockResolvedValue(true);
+    bcryptMocked.compare.mockImplementation(() => Promise.resolve(true));
 
     const response = await updateMemberPassword(
       mockRequest({ ...mockRequestData, body: thisMockRequestData }),
@@ -397,7 +397,7 @@ describe('Members', () => {
     };
 
     prismaMock.member.findUnique.mockResolvedValue(mockMember);
-    bcryptMocked.compare.mockResolvedValue(false);
+    bcryptMocked.compare.mockImplementation(() => Promise.resolve(false));
 
     const response = await updateMemberPassword(
       mockRequest({ ...mockRequestData, body: thisMockRequestData }),
@@ -475,7 +475,8 @@ describe('Members', () => {
 
     const decodedToken = { memberId: mockMember.id };
 
-    jwtMock.verify.mockReturnValue(decodedToken);
+    jwtMock.verify.mockImplementation(() => decodedToken);
+
     prismaMock.member.findUnique.mockResolvedValue(mockMember);
 
     const response = await confirmResetMemberPassword(
@@ -525,7 +526,7 @@ describe('Members', () => {
 
     const decodedToken = { memberId: mockMember.id };
 
-    jwtMock.verify.mockReturnValue(decodedToken);
+    jwtMock.verify.mockImplementation(() => decodedToken);
     prismaMock.member.findUnique.mockResolvedValue(null);
 
     const response = await confirmResetMemberPassword(
@@ -545,7 +546,7 @@ describe('Members', () => {
 
     const decodedToken = { memberId: mockMember.id };
 
-    jwtMock.verify.mockReturnValue(decodedToken);
+    jwtMock.verify.mockImplementation(() => decodedToken);
     prismaMock.member.findUnique.mockRejectedValue(new Error('Database Error'));
 
     const response = await confirmResetMemberPassword(

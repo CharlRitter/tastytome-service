@@ -2,6 +2,7 @@ import { cloneDeep } from 'lodash';
 import { mockRequest, mockResponse } from '@/tests/mocks/express';
 import prismaMock from '@/tests/mocks/prisma';
 import { getRecipes, getRecipeById, createRecipe, updateRecipe, deleteRecipe } from '@/controllers/recipeController';
+import { recipe } from '@prisma/client';
 
 jest.mock('jsonwebtoken');
 
@@ -290,7 +291,7 @@ describe('Recipes Controller', () => {
 
   it('should delete an existing recipe', async() => {
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
-    prismaMock.recipe.delete.mockResolvedValue({});
+    prismaMock.recipe.delete.mockResolvedValue({} as recipe);
 
     const response = await deleteRecipe(mockRequest(mockRequestData), mockResponse());
 

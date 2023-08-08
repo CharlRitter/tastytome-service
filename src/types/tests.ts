@@ -4,7 +4,8 @@ export type MockRequest = {
   session?: any;
   params?: any;
   body?: any;
-  header?: { [name: string]: string };
+  headers?: { [name: string]: string };
+  header?: (name: string) => string | undefined;
   memberId?: number;
 };
 

@@ -28,4 +28,5 @@ router.post('/v1/member/login/:id', loginMember);
 router.post('/v1/member/logout/:id', logoutMember);
 
 router.put('/v1/member/settings/:id', authenticateMember, updateMemberSettings);
+
 export default router;

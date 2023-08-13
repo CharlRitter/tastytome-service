@@ -34,7 +34,13 @@ export async function getMeasurementTypes(_: Request, response: Response): Promi
 
 export async function getMeasurementUnits(_: Request, response: Response): Promise<Response<measurementunit[]>> {
   try {
-    const query: measurementunit[] = await prisma.measurementunit.findMany();
+    const query: measurementunit[] = await prisma.measurementunit.findMany({
+      include: {
+        measurementsystem: true,
+        measurementtype: true,
+        recipeingredient: true
+      }
+    });
 
     return response.status(200).json(query);
   } catch (error) {

@@ -72,6 +72,7 @@ model recipe {
   memberid            Int
   title               String              @db.VarChar(100)
   description         String              @db.VarChar(255)
+  image               String?             @db.VarChar(255)
   rating              Int?                @default(0)
   effort              Int?                @default(0)
   measurementsystemid Int

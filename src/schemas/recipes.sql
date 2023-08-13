@@ -4,6 +4,7 @@ CREATE TABLE Recipe (
   memberId INT NOT NULL,
   title VARCHAR(100) NOT NULL,
   description VARCHAR(255) NOT NULL,
+  image VARCHAR(255),
   rating INT DEFAULT 0,
   effort INT DEFAULT 0,
   measurementSystemId INT NOT NULL,

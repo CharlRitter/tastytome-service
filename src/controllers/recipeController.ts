@@ -29,11 +29,12 @@ export async function getRecipes(
           { memberid: request.memberId },
           { rating: { gte: rating || 0 } },
           { effort: { gte: effort || 0 } },
-          categories && { recipecategory: { some: { id: { in: categories } } } }
+          categories && { recipecategory: { some: { categoryid: { in: categories } } } }
         ]
       },
       include: {
-        recipecategory: true,
+        measurementsystem: true,
+        recipecategory: { include: { category: true } },
         recipeingredient: true,
         recipeinstruction: true,
         recipetimer: true
@@ -90,6 +91,7 @@ export async function createRecipe(request: Request, response: Response): Promis
         memberid: 'integer',
         title: 'string',
         description: 'string',
+        image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
         measurementsystemid: 'integer',
@@ -178,6 +180,7 @@ export async function createRecipe(request: Request, response: Response): Promis
           memberid: memberId,
           title: recipeData.title,
           description: recipeData.description,
+          image: recipeData.image,
           rating: recipeData.rating,
           effort: recipeData.effort,
           measurementsystemid: recipeData.measurementsystemid
@@ -224,6 +227,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
         memberid: 'integer (optional)',
         title: 'string (optional)',
         description: 'string (optional)',
+        image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
         measurementsystemid: 'integer (optional)',

@@ -9,10 +9,10 @@ import {
 
 const router = Router();
 
-router.get('/v1/categories', getCategories);
-router.get('/v1/measurement-systems', getMeasurementSystems);
-router.get('/v1/measurement-types', getMeasurementTypes);
-router.get('/v1/measurement-units', getMeasurementUnits);
-router.get('/v1/themes', getThemes);
+router.get('/v1/enum/categories', getCategories);
+router.get('/v1/enum/measurement-systems', getMeasurementSystems);
+router.get('/v1/enum/measurement-types', getMeasurementTypes);
+router.get('/v1/enum/measurement-units', getMeasurementUnits);
+router.get('/v1/enum/themes', getThemes);
 
 export default router;

@@ -175,6 +175,7 @@ export async function loginMember(request: Request, response: Response): Promise
 
     const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET as Secret, { expiresIn: '6h' })}`;
 
+    // TODO return member
     return response.setHeader('Authorization', token).status(201).json({ message: 'Member successfully logged in' });
   } catch (error) {
     return response.status(500).json({ message: 'Error logging in member' });
@@ -269,7 +270,8 @@ export async function confirmResetMemberPassword(
   response: Response
 ): Promise<Response<{ message: string }>> {
   try {
-    const { token, newPassword } = request.body;
+    const { token } = request.params;
+    const { newPassword } = request.body;
 
     if (!token || !newPassword) {
       return response.status(400).json({ message: 'Both token and newPassword are required' });

@@ -14,18 +14,12 @@
     "dev": "concurrently \"babel src --ignore 'src/tests/**/*.ts' --out-dir dist --extensions \".ts,.tsx\" --watch\" \"nodemon -q dist/index.js\"",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "pre-commit": "lint-staged",
     "prepare": "husky install",
     "prisma-db-pull": "yarn prisma db pull",
     "prisma-generate": "yarn prisma generate",
     "sort-package": "yarn sort-package-json",
     "test": "jest --config jest.config.ts --coverage",
     "tree": "git ls-tree -r --name-only HEAD | tree --fromfile"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
@@ -63,6 +57,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "babel-jest": "^29.6.2",
     "babel-plugin-module-resolver": "^5.0.0",
+    "commitizen": "^4.3.0",
     "concurrently": "^8.2.0",
     "eslint": "^8.43.0",
     "eslint-config-airbnb": "^19.0.4",
@@ -75,10 +70,11 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.33.1",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "husky": "^8.0.1",
+    "husky": "^8.0.3",
     "jest": "^29.6.2",
-    "lint-staged": "^13.0.1",
+    "lint-staged": "^14.0.1",
     "nodemon": "^3.0.1",
+    "pinst": "^3.0.0",
     "prettier": "^3.0.0",
     "prisma": "latest",
     "sort-package-json": "^2.4.1",

@@ -23,19 +23,18 @@ export async function getRecipes(
     const pageSize = parseInt(request.query?.pageSize as string, 10) || 10;
     const skip = (page - 1) * pageSize;
 
-    const recipesList = await prisma.recipe.findMany({
-      where: {
-        AND: [
-          { memberid: request.memberId },
-          { rating: { gte: rating || 0 } },
-          { effort: { gte: effort || 0 } },
-          categories && { recipecategory: { some: { categoryid: { in: categories } } } }
-        ]
-      },
+    const whereConditions = [
+      { memberid: request.memberId },
+      { rating: { gte: rating || 0 } },
+      { effort: { gte: effort || 0 } },
+      categories && { recipecategory: { some: { categoryid: { in: categories } } } }
+    ].filter(Boolean);
+    const recipes = await prisma.recipe.findMany({
+      where: { AND: whereConditions },
       include: {
         measurementsystem: true,
         recipecategory: { include: { category: true } },
-        recipeingredient: true,
+        recipeingredient: { include: { measurementtype: true, measurementunit: true } },
         recipeinstruction: true,
         recipetimer: true
       },
@@ -43,24 +42,23 @@ export async function getRecipes(
       skip,
       take: pageSize
     });
+    const totalCount = await prisma.recipe.count({ where: { AND: whereConditions } });
 
-    return response.status(200).json(recipesList);
+    return response.status(200).json({ recipes, totalCount });
   } catch (error) {
     return response.status(500).json({ message: 'Error getting recipe' });
   }
 }
 
-export async function getRecipeById(
-  request: Request,
-  response: Response
-): Promise<Response<Recipe | { message: string }>> {
+export async function getRecipe(request: Request, response: Response): Promise<Response<Recipe | { message: string }>> {
   try {
     const recipeId = parseInt(request.params.id as string, 10);
     const recipeContent = await prisma.recipe.findUnique({
       where: { id: recipeId },
       include: {
-        recipecategory: true,
-        recipeingredient: true,
+        measurementsystem: true,
+        recipecategory: { include: { category: true } },
+        recipeingredient: { include: { measurementtype: true, measurementunit: true } },
         recipeinstruction: true,
         recipetimer: true
       }
@@ -140,7 +138,9 @@ export async function createRecipe(request: Request, response: Response): Promis
     });
 
     if (recipeingredientsMissingFields.length > 0) {
-      return response.status(400).json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
+      return response
+        .status(400)
+        .json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
     }
 
     // recipetimers check
@@ -270,7 +270,9 @@ export async function updateRecipe(request: Request, response: Response): Promis
       });
 
       if (recipeingredientsMissingFields.length > 0) {
-        return response.status(400).json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
+        return response
+          .status(400)
+          .json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
       }
     }
 

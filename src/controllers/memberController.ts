@@ -140,8 +140,6 @@ export async function loginMember(request: Request, response: Response): Promise
 
     const memberContent = await prisma.member.findFirst({ where: { emailaddress } });
 
-    delete request.params.emailaddress;
-
     if (!memberContent) {
       return response.status(401).json({ message: 'Invalid credentials' });
     }
@@ -154,7 +152,7 @@ export async function loginMember(request: Request, response: Response): Promise
 
     const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET as Secret, { expiresIn: '6h' })}`;
 
-    return response.setHeader('Authorization', token).status(201).json({ message: 'Member successfully logged in' });
+    return response.setHeader('Authorization', token).status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error logging in member' });
   }

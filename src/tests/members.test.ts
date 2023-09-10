@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { mockRequest, mockResponse } from '@/tests/mocks/express';
 import prismaMock from '@/tests/mocks/prisma';
 import {
-  getMemberById,
+  getMember,
   createMember,
   updateMember,
   deleteMember,
@@ -15,6 +15,7 @@ import {
   confirmResetMemberPassword,
   updateMemberSettings
 } from '@/controllers/memberController';
+import { membersettings } from '@prisma/client';
 
 jest.mock('jsonwebtoken');
 jest.mock('bcrypt');
@@ -46,49 +47,34 @@ describe('Members', () => {
     editedat: new Date(),
     membersettings: mockMemberSettings
   };
-  const mockMemberId = 1;
-  const mockRequestData = {
-    params: { id: mockMemberId },
-    memberId: mockMember.id
-  };
+  const mockRequestData = { memberId: mockMember.id };
   const jwtMock = jwt as jest.Mocked<typeof import('jsonwebtoken')>;
   const bcryptMocked = bcrypt as jest.Mocked<typeof import('bcrypt')>;
 
   it('should return member by ID', async() => {
+    const responseMember = { data: mockMember };
+
     prismaMock.member.findUnique.mockResolvedValue(mockMember);
 
-    const response = await getMemberById(mockRequest(mockRequestData), mockResponse());
+    const response = await getMember(mockRequest(mockRequestData), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith(mockMember);
+    expect(response.json).toHaveBeenCalledWith(responseMember);
   });
 
   it('should handle error when member not found while fetching member by ID', async() => {
     prismaMock.member.findUnique.mockResolvedValue(null);
 
-    const response = await getMemberById(mockRequest(mockRequestData), mockResponse());
+    const response = await getMember(mockRequest(mockRequestData), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ message: 'Member not found' });
   });
 
-  it("should handle error when user doesn't own the member while fetching member by ID", async() => {
-    prismaMock.member.findUnique.mockResolvedValue(mockMember);
-
-    const localMockRequestData = cloneDeep(mockRequestData);
-
-    localMockRequestData.memberId = 2;
-
-    const response = await getMemberById(mockRequest(localMockRequestData), mockResponse());
-
-    expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorised: This member does not belong to you' });
-  });
-
   it('should handle error while fetching member by ID', async() => {
     prismaMock.member.findUnique.mockRejectedValue(new Error('Database Error'));
 
-    const response = await getMemberById(mockRequest(mockRequestData), mockResponse());
+    const response = await getMember(mockRequest(mockRequestData), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(500);
     expect(response.json).toHaveBeenCalledWith({ message: 'Error getting member by ID' });
@@ -135,11 +121,13 @@ describe('Members', () => {
 
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.json).toHaveBeenCalledWith({
-      firstname: 'string',
-      lastname: 'string',
-      emailaddress: 'string',
-      password: 'string',
-      ispremium: 'boolean (optional)'
+      data: {
+        firstname: 'string',
+        lastname: 'string',
+        emailaddress: 'string',
+        password: 'string',
+        ispremium: 'boolean (optional)'
+      }
     });
   });
 
@@ -186,7 +174,6 @@ describe('Members', () => {
     const response = await updateMember(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(204);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Member successfully updated' });
   });
 
   it('should handle error when fields are missing while updating an existing member', async() => {
@@ -194,10 +181,12 @@ describe('Members', () => {
 
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.json).toHaveBeenCalledWith({
-      firstname: 'string (optional)',
-      lastname: 'string (optional)',
-      emailaddress: 'string (optional)',
-      ispremium: 'boolean (optional)'
+      data: {
+        firstname: 'string (optional)',
+        lastname: 'string (optional)',
+        emailaddress: 'string (optional)',
+        ispremium: 'boolean (optional)'
+      }
     });
   });
 
@@ -213,19 +202,6 @@ describe('Members', () => {
 
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ message: 'Member not found' });
-  });
-
-  it("should handle error when user doesn't own the member while updating an existing member", async() => {
-    prismaMock.member.findUnique.mockResolvedValue(mockMember);
-
-    const localMockRequestData = cloneDeep(mockRequestData);
-    const response = await updateMember(
-      mockRequest({ ...localMockRequestData, memberId: 2, body: { firstname: 'bob' } }),
-      mockResponse()
-    );
-
-    expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorised: This member does not belong to you' });
   });
 
   it('should handle error while updating an existing member', async() => {
@@ -249,7 +225,6 @@ describe('Members', () => {
     const response = await deleteMember(mockRequest(mockRequestData), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(204);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Member successfully deleted' });
   });
 
   it('should handle error when member is not found while deleting an existing member', async() => {
@@ -259,19 +234,6 @@ describe('Members', () => {
 
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ message: 'Member not found' });
-  });
-
-  it("should handle error when user doesn't own the member while deleting an existing member", async() => {
-    prismaMock.member.findUnique.mockResolvedValue(mockMember);
-
-    const localMockRequestData = cloneDeep(mockRequestData);
-
-    localMockRequestData.memberId = 2;
-
-    const response = await deleteMember(mockRequest(localMockRequestData), mockResponse());
-
-    expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorised: This member does not belong to you' });
   });
 
   it('should handle error while deleting an existing member', async() => {
@@ -296,8 +258,7 @@ describe('Members', () => {
 
     const response = await loginMember(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
 
-    expect(response.status).toHaveBeenCalledWith(201);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Member successfully logged in' });
+    expect(response.status).toHaveBeenCalledWith(204);
   });
 
   it('should handle error when member with provided emailaddress not found while logging in', async() => {
@@ -355,7 +316,6 @@ describe('Members', () => {
     const response = await logoutMember(mockRequest(mockRequestInstance), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(204);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Member successfully logged out' });
   });
 
   it('should handle error when token is missing while logging out', async() => {
@@ -387,7 +347,6 @@ describe('Members', () => {
     );
 
     expect(response.status).toHaveBeenCalledWith(204);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Password successfully updated' });
   });
 
   it('should handle error when current password is incorrect while updating member password', async() => {
@@ -435,8 +394,7 @@ describe('Members', () => {
       mockResponse()
     );
 
-    expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Password reset email sent successfully' });
+    expect(response.status).toHaveBeenCalledWith(204);
   });
 
   it('should handle error when email address is missing while resetting member password', async() => {
@@ -469,8 +427,8 @@ describe('Members', () => {
 
   it('should confirm reset member password', async() => {
     const thisMockRequestData = {
-      token: 'validtoken',
-      newPassword: 'newpassword'
+      params: { token: 'validtoken' },
+      body: { newPassword: 'newpassword' }
     };
 
     const decodedToken = { memberId: mockMember.id };
@@ -480,22 +438,21 @@ describe('Members', () => {
     prismaMock.member.findUnique.mockResolvedValue(mockMember);
 
     const response = await confirmResetMemberPassword(
-      mockRequest({ ...mockRequestData, body: thisMockRequestData }),
+      mockRequest({ ...mockRequestData, ...thisMockRequestData }),
       mockResponse()
     );
 
     expect(response.status).toHaveBeenCalledWith(204);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Password successfully updated' });
   });
 
   it('should handle error when token is missing while confirming reset member password', async() => {
     const thisMockRequestData = {
-      // Missing token
-      newPassword: 'newpassword'
+      params: {},
+      body: { newPassword: 'newpassword' }
     };
 
     const response = await confirmResetMemberPassword(
-      mockRequest({ ...mockRequestData, body: thisMockRequestData }),
+      mockRequest({ ...mockRequestData, ...thisMockRequestData }),
       mockResponse()
     );
 
@@ -505,12 +462,12 @@ describe('Members', () => {
 
   it('should handle error when newPassword is missing while confirming reset member password', async() => {
     const thisMockRequestData = {
-      token: 'validtoken'
-      // Missing newPassword
+      params: { token: 'validtoken' },
+      body: {}
     };
 
     const response = await confirmResetMemberPassword(
-      mockRequest({ ...mockRequestData, body: thisMockRequestData }),
+      mockRequest({ ...mockRequestData, ...thisMockRequestData }),
       mockResponse()
     );
 
@@ -520,8 +477,8 @@ describe('Members', () => {
 
   it('should handle error when member with decoded token is not found while confirming reset member password', async() => {
     const thisMockRequestData = {
-      token: 'validtoken',
-      newPassword: 'newpassword'
+      params: { token: 'validtoken' },
+      body: { newPassword: 'newpassword' }
     };
 
     const decodedToken = { memberId: mockMember.id };
@@ -530,7 +487,7 @@ describe('Members', () => {
     prismaMock.member.findUnique.mockResolvedValue(null);
 
     const response = await confirmResetMemberPassword(
-      mockRequest({ ...mockRequestData, body: thisMockRequestData }),
+      mockRequest({ ...mockRequestData, ...thisMockRequestData }),
       mockResponse()
     );
 
@@ -540,8 +497,8 @@ describe('Members', () => {
 
   it('should handle error while confirming reset member password', async() => {
     const thisMockRequestData = {
-      token: 'validtoken',
-      newPassword: 'newpassword'
+      params: { token: 'validtoken' },
+      body: { newPassword: 'newpassword' }
     };
 
     const decodedToken = { memberId: mockMember.id };
@@ -550,7 +507,7 @@ describe('Members', () => {
     prismaMock.member.findUnique.mockRejectedValue(new Error('Database Error'));
 
     const response = await confirmResetMemberPassword(
-      mockRequest({ ...mockRequestData, body: thisMockRequestData }),
+      mockRequest({ ...mockRequestData, ...thisMockRequestData }),
       mockResponse()
     );
 
@@ -567,7 +524,7 @@ describe('Members', () => {
       displaynutritionalinformation: true
     };
 
-    prismaMock.membersettings.findUnique.mockResolvedValue(mockMemberSettings);
+    prismaMock.member.findUnique.mockResolvedValue(mockMember);
 
     const response = await updateMemberSettings(
       mockRequest({ ...mockRequestData, body: thisMockRequestData }),
@@ -575,7 +532,26 @@ describe('Members', () => {
     );
 
     expect(response.status).toHaveBeenCalledWith(204);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Member settings successfully updated' });
+  });
+
+  it('should handle error when member not found while updating member settings', async() => {
+    const thisMockRequestData = {
+      theme: 2,
+      measurementsystem: 1,
+      usepantry: true,
+      usenegativepantry: true,
+      displaynutritionalinformation: true
+    };
+
+    prismaMock.member.findUnique.mockResolvedValue(null);
+
+    const response = await updateMemberSettings(
+      mockRequest({ ...mockRequestData, body: thisMockRequestData }),
+      mockResponse()
+    );
+
+    expect(response.status).toHaveBeenCalledWith(404);
+    expect(response.json).toHaveBeenCalledWith({ message: 'Member not found' });
   });
 
   it('should handle error when member settings not found while updating member settings', async() => {
@@ -586,8 +562,11 @@ describe('Members', () => {
       usenegativepantry: true,
       displaynutritionalinformation: true
     };
+    const tempMockMember = cloneDeep(mockMember);
 
-    prismaMock.membersettings.findUnique.mockResolvedValue(null);
+    tempMockMember.membersettings = {} as membersettings;
+
+    prismaMock.member.findUnique.mockResolvedValue(tempMockMember);
 
     const response = await updateMemberSettings(
       mockRequest({ ...mockRequestData, body: thisMockRequestData }),
@@ -596,30 +575,6 @@ describe('Members', () => {
 
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ message: 'Member settings not found' });
-  });
-
-  it("should handle error when user doesn't own the member settings while updating member settings", async() => {
-    const thisMockRequestData = {
-      theme: 2,
-      measurementsystem: 1,
-      usepantry: true,
-      usenegativepantry: true,
-      displaynutritionalinformation: true
-    };
-
-    prismaMock.membersettings.findUnique.mockResolvedValue(mockMemberSettings);
-
-    const localMockRequestData = cloneDeep(mockRequestData);
-
-    localMockRequestData.memberId = 2;
-
-    const response = await updateMemberSettings(
-      mockRequest({ ...localMockRequestData, body: thisMockRequestData }),
-      mockResponse()
-    );
-
-    expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorised: This member does not belong to you' });
   });
 
   it('should handle error while updating member settings', async() => {
@@ -631,7 +586,7 @@ describe('Members', () => {
       displaynutritionalinformation: true
     };
 
-    prismaMock.membersettings.findUnique.mockRejectedValue(new Error('Database Error'));
+    prismaMock.member.findUnique.mockRejectedValue(new Error('Database Error'));
 
     const response = await updateMemberSettings(
       mockRequest({ ...mockRequestData, body: thisMockRequestData }),

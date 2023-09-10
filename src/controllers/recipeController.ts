@@ -15,12 +15,12 @@ export async function getRecipes(
   response: Response
 ): Promise<Response<Recipe[] | { message: string }>> {
   try {
-    const rating = parseInt(request.query?.rating as string, 10);
-    const effort = parseInt(request.query?.effort as string, 10);
-    const categories = request.query?.categories as string;
-    const orderBy: Prisma.SortOrder = request.query?.orderBy === 'asc' ? 'asc' : 'desc';
-    const page = parseInt(request.query?.page as string, 10) || 1;
-    const pageSize = parseInt(request.query?.pageSize as string, 10) || 10;
+    const rating = parseInt(request.params?.rating as string, 10) || 0;
+    const effort = parseInt(request.params?.effort as string, 10) || 0;
+    const categories = (request.params?.categories as string) || '';
+    const orderBy: Prisma.SortOrder = request.params?.orderBy === 'asc' ? 'asc' : 'desc';
+    const page = parseInt(request.params?.page as string, 10) || 1;
+    const pageSize = parseInt(request.params?.pageSize as string, 10) || 10;
     const skip = (page - 1) * pageSize;
 
     const whereConditions: Prisma.recipeWhereInput[] = [];
@@ -77,7 +77,7 @@ export async function getRecipe(request: Request, response: Response): Promise<R
     const currentMemberId = request.memberId;
 
     if (currentMemberId !== recipeContent.memberid) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
+      return response.status(401).json({ message: 'Unauthorised: This recipe does not belong to you' });
     }
 
     return response.status(200).json({ data: recipeContent });
@@ -173,23 +173,19 @@ export async function createRecipe(request: Request, response: Response): Promis
       }
     }
 
-    const memberId = parseInt(request.params.recipeId as string, 10);
-    const currentMemberId = request.memberId;
-
-    if (currentMemberId !== memberId) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
-    }
+    const memberid = request.memberId as number;
+    const { title, description, image, rating, effort, measurementsystemid } = recipeData;
 
     await prisma.$transaction(async(transactionPrisma) => {
       const newRecipe = await transactionPrisma.recipe.create({
         data: {
-          memberid: memberId,
-          title: recipeData.title,
-          description: recipeData.description,
-          image: recipeData.image,
-          rating: recipeData.rating,
-          effort: recipeData.effort,
-          measurementsystemid: recipeData.measurementsystemid
+          memberid,
+          title,
+          description,
+          image,
+          rating,
+          effort,
+          measurementsystemid
         }
       });
 
@@ -308,7 +304,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
     const currentMemberId = request.memberId;
 
     if (currentMemberId !== recipeContent.memberid) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
+      return response.status(401).json({ message: 'Unauthorised: This recipe does not belong to you' });
     }
 
     await prisma.$transaction(async(transactionPrisma) => {
@@ -377,7 +373,7 @@ export async function deleteRecipe(request: Request, response: Response): Promis
     const currentMemberId = request.memberId;
 
     if (currentMemberId !== recipeContent.memberid) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
+      return response.status(401).json({ message: 'Unauthorised: This recipe does not belong to you' });
     }
 
     await prisma.recipe.delete({ where: { id: recipeId } });

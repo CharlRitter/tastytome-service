@@ -32,13 +32,14 @@ describe('Enums', () => {
       { id: 14, value: 'Vegetarian' },
       { id: 15, value: 'Vegan' }
     ];
+    const responseCategories = { data: mockCategories };
 
     prismaMock.category.findMany.mockResolvedValue(mockCategories);
 
     const response = await getCategories(mockRequest({ session: {} }), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith(mockCategories);
+    expect(response.json).toHaveBeenCalledWith(responseCategories);
   });
 
   it('should handle error while fetching categories', async() => {
@@ -55,13 +56,14 @@ describe('Enums', () => {
       { id: 1, value: 'Metric' },
       { id: 2, value: 'Imperial' }
     ];
+    const responseMeasurementSystems = { data: mockMeasurementSystems };
 
     prismaMock.measurementsystem.findMany.mockResolvedValue(mockMeasurementSystems);
 
     const response = await getMeasurementSystems(mockRequest({ session: {} }), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith(mockMeasurementSystems);
+    expect(response.json).toHaveBeenCalledWith(responseMeasurementSystems);
   });
 
   it('should handle error while fetching measurement systems', async() => {
@@ -81,13 +83,14 @@ describe('Enums', () => {
       { id: 4, value: 'Volume' },
       { id: 5, value: 'Weight' }
     ];
+    const responseMeasurementTypes = { data: mockMeasurementTypes };
 
     prismaMock.measurementtype.findMany.mockResolvedValue(mockMeasurementTypes);
 
     const response = await getMeasurementTypes(mockRequest({ session: {} }), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith(mockMeasurementTypes);
+    expect(response.json).toHaveBeenCalledWith(responseMeasurementTypes);
   });
 
   it('should handle error while fetching measurement types', async() => {
@@ -122,13 +125,14 @@ describe('Enums', () => {
       { id: 19, measurementsystemid: 2, measurementtypeid: 5, value: 'Ounce', abbreviation: 'oz' },
       { id: 20, measurementsystemid: 2, measurementtypeid: 5, value: 'Pound', abbreviation: 'lb' }
     ];
+    const responseMeasurementUnits = { data: mockMeasurementUnits };
 
     prismaMock.measurementunit.findMany.mockResolvedValue(mockMeasurementUnits);
 
     const response = await getMeasurementUnits(mockRequest({ session: {} }), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith(mockMeasurementUnits);
+    expect(response.json).toHaveBeenCalledWith(responseMeasurementUnits);
   });
 
   it('should handle error while fetching measurement units', async() => {
@@ -146,13 +150,14 @@ describe('Enums', () => {
       { id: 2, value: 'Dark' },
       { id: 3, value: 'Light' }
     ];
+    const responseThemes = { data: mockThemes };
 
     prismaMock.theme.findMany.mockResolvedValue(mockThemes);
 
     const response = await getThemes(mockRequest({ session: {} }), mockResponse());
 
     expect(response.status).toHaveBeenCalledWith(200);
-    expect(response.json).toHaveBeenCalledWith(mockThemes);
+    expect(response.json).toHaveBeenCalledWith(responseThemes);
   });
 
   it('should handle error while fetching themes', async() => {

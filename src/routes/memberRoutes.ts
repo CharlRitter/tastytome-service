@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticateMember } from '@/middleware/authenticationMiddleware';
 import {
-  getMemberById,
+  getMember,
   createMember,
   updateMember,
   deleteMember,
@@ -16,17 +16,17 @@ import {
 const router = Router();
 
 router.post('/v1/member', createMember);
-router.get('/v1/member/:id', authenticateMember, getMemberById);
-router.put('/v1/member/:id', authenticateMember, updateMember);
-router.delete('/v1/member/:id', authenticateMember, deleteMember);
+router.get('/v1/member', authenticateMember, getMember);
+router.put('/v1/member', authenticateMember, updateMember);
+router.delete('/v1/member', authenticateMember, deleteMember);
 
-router.put('/v1/member/password/update/:id', authenticateMember, updateMemberPassword);
+router.put('/v1/member/password/update', authenticateMember, updateMemberPassword);
 router.put('/v1/member/password/reset', resetMemberPassword);
 router.put('/v1/member/password/reset/:token', confirmResetMemberPassword);
 
-router.post('/v1/member/login/:id', loginMember);
-router.post('/v1/member/logout/:id', logoutMember);
+router.post('/v1/member/login', loginMember);
+router.post('/v1/member/logout', logoutMember);
 
-router.put('/v1/member/settings/:id', authenticateMember, updateMemberSettings);
+router.put('/v1/member/settings', authenticateMember, updateMemberSettings);
 
 export default router;

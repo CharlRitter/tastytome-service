@@ -6,7 +6,7 @@ export async function getCategories(_: Request, response: Response): Promise<Res
   try {
     const query: category[] = await prisma.category.findMany();
 
-    return response.status(200).json(query);
+    return response.status(200).json({ data: query });
   } catch (error) {
     return response.status(500).json({ message: 'Error getting categories' });
   }
@@ -16,7 +16,7 @@ export async function getMeasurementSystems(_: Request, response: Response): Pro
   try {
     const query: measurementsystem[] = await prisma.measurementsystem.findMany();
 
-    return response.status(200).json(query);
+    return response.status(200).json({ data: query });
   } catch (error) {
     return response.status(500).json({ message: 'Error getting measurement systems' });
   }
@@ -26,7 +26,7 @@ export async function getMeasurementTypes(_: Request, response: Response): Promi
   try {
     const query: measurementtype[] = await prisma.measurementtype.findMany();
 
-    return response.status(200).json(query);
+    return response.status(200).json({ data: query });
   } catch (error) {
     return response.status(500).json({ message: 'Error getting measurement types' });
   }
@@ -42,7 +42,7 @@ export async function getMeasurementUnits(_: Request, response: Response): Promi
       }
     });
 
-    return response.status(200).json(query);
+    return response.status(200).json({ data: query });
   } catch (error) {
     return response.status(500).json({ message: 'Error getting measurement units' });
   }
@@ -52,7 +52,7 @@ export async function getThemes(_: Request, response: Response): Promise<Respons
   try {
     const query: theme[] = await prisma.theme.findMany();
 
-    return response.status(200).json(query);
+    return response.status(200).json({ data: query });
   } catch (error) {
     return response.status(500).json({ message: 'Error getting themes' });
   }

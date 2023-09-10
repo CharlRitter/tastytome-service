@@ -9,12 +9,9 @@ interface Member extends member {
   membersettings: membersettings;
 }
 
-export async function getMemberById(
-  request: Request,
-  response: Response
-): Promise<Response<Member | { message: string }>> {
+export async function getMember(request: Request, response: Response): Promise<Response<Member | { message: string }>> {
   try {
-    const memberId = parseInt(request.params.id as string, 10);
+    const { memberId } = request;
     const memberContent = await prisma.member.findUnique({
       where: { id: memberId },
       include: { membersettings: true }
@@ -24,13 +21,7 @@ export async function getMemberById(
       return response.status(404).json({ message: 'Member not found' });
     }
 
-    const currentMemberId = request.memberId;
-
-    if (currentMemberId !== memberId) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
-    }
-
-    return response.status(200).json(memberContent);
+    return response.status(200).json({ data: memberContent });
   } catch (error) {
     return response.status(500).json({ message: 'Error getting member by ID' });
   }
@@ -49,7 +40,7 @@ export async function createMember(request: Request, response: Response): Promis
         ispremium: 'boolean (optional)'
       };
 
-      return response.status(200).json(schema);
+      return response.status(200).json({ data: schema });
     }
 
     const requiredFields: Array<keyof member> = ['firstname', 'lastname', 'emailaddress', 'password'];
@@ -90,7 +81,6 @@ export async function createMember(request: Request, response: Response): Promis
 
 export async function updateMember(request: Request, response: Response): Promise<Response<{ message: string }>> {
   try {
-    const memberId = parseInt(request.params.id as string, 10);
     const memberData = request.body as Partial<member>;
 
     if (!memberData || isEmpty(memberData)) {
@@ -101,19 +91,14 @@ export async function updateMember(request: Request, response: Response): Promis
         ispremium: 'boolean (optional)'
       };
 
-      return response.status(200).json(schema);
+      return response.status(200).json({ data: schema });
     }
 
+    const { memberId } = request;
     const memberContent = await prisma.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
-    }
-
-    const currentMemberId = request.memberId;
-
-    if (currentMemberId !== memberId) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
     }
 
     await prisma.member.update({
@@ -126,7 +111,7 @@ export async function updateMember(request: Request, response: Response): Promis
       }
     });
 
-    return response.status(204).json({ message: 'Member successfully updated' });
+    return response.status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error updating member' });
   }
@@ -134,22 +119,16 @@ export async function updateMember(request: Request, response: Response): Promis
 
 export async function deleteMember(request: Request, response: Response): Promise<Response<{ message: string }>> {
   try {
-    const memberId = parseInt(request.params.id as string, 10);
+    const { memberId } = request;
     const memberContent = await prisma.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
     }
 
-    const currentMemberId = request.memberId;
-
-    if (currentMemberId !== memberId) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
-    }
-
     await prisma.member.delete({ where: { id: memberId } });
 
-    return response.status(204).json({ message: 'Member successfully deleted' });
+    return response.status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error deleting member' });
   }
@@ -175,7 +154,6 @@ export async function loginMember(request: Request, response: Response): Promise
 
     const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET as Secret, { expiresIn: '6h' })}`;
 
-    // TODO return member
     return response.setHeader('Authorization', token).status(201).json({ message: 'Member successfully logged in' });
   } catch (error) {
     return response.status(500).json({ message: 'Error logging in member' });
@@ -190,7 +168,7 @@ export async function logoutMember(request: Request, response: Response): Promis
       return response.status(401).json({ message: 'Unauthorized: Token is missing' });
     }
 
-    return response.setHeader('Authorization', '').status(204).json({ message: 'Member successfully logged out' });
+    return response.setHeader('Authorization', '').status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error logging out member' });
   }
@@ -201,23 +179,17 @@ export async function updateMemberPassword(
   response: Response
 ): Promise<Response<{ message: string }>> {
   try {
-    const memberId = parseInt(request.params.id as string, 10);
     const { currentPassword, newPassword } = request.body;
 
     if (!currentPassword || !newPassword) {
       return response.status(400).json({ message: 'Both currentPassword and newPassword are required' });
     }
 
+    const { memberId } = request;
     const memberContent = await prisma.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
-    }
-
-    const currentMemberId = request.memberId;
-
-    if (currentMemberId !== memberId) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
     }
 
     const passwordMatches = await bcrypt.compare(currentPassword, memberContent.password);
@@ -234,7 +206,7 @@ export async function updateMemberPassword(
       data: { password: newPasswordHash }
     });
 
-    return response.status(204).json({ message: 'Password successfully updated' });
+    return response.status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error updating password' });
   }
@@ -259,7 +231,7 @@ export async function resetMemberPassword(
 
     // TODO Implement password reset logic here (generate token and send email)
 
-    return response.status(200).json({ message: 'Password reset email sent successfully' });
+    return response.status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error resetting password' });
   }
@@ -294,7 +266,7 @@ export async function confirmResetMemberPassword(
       data: { password: newPasswordHash }
     });
 
-    return response.status(204).json({ message: 'Password successfully updated' });
+    return response.status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error updating password' });
   }
@@ -306,7 +278,6 @@ export async function updateMemberSettings(
 ): Promise<Response<{ message: string }>> {
   try {
     const memberSettingsData = request.body as Partial<membersettings>;
-    const memberSettingsId = parseInt(request.params.id as string, 10);
 
     if (!memberSettingsData || isEmpty(memberSettingsData)) {
       const schema = {
@@ -317,21 +288,26 @@ export async function updateMemberSettings(
         displaynutritionalinformation: 'boolean (optional)'
       };
 
-      return response.status(200).json(schema);
+      return response.status(200).json({ data: schema });
     }
 
-    const memberSettings = await prisma.membersettings.findUnique({ where: { id: memberSettingsId } });
+    const { memberId } = request;
+    const memberContent = await prisma.member.findUnique({
+      where: { id: memberId },
+      include: { membersettings: true }
+    });
+
+    if (isEmpty(memberContent)) {
+      return response.status(404).json({ message: 'Member not found' });
+    }
+
+    const memberSettings = memberContent.membersettings;
 
     if (isEmpty(memberSettings)) {
       return response.status(404).json({ message: 'Member settings not found' });
     }
 
-    const currentMemberId = request.memberId;
-    const memberId = memberSettings.memberid;
-
-    if (currentMemberId !== memberId) {
-      return response.status(401).json({ message: 'Unauthorised: This member does not belong to you' });
-    }
+    const memberSettingsId = memberSettings.id;
 
     await prisma.membersettings.update({
       where: { id: memberSettingsId },
@@ -344,7 +320,7 @@ export async function updateMemberSettings(
       }
     });
 
-    return response.status(204).json({ message: 'Member settings successfully updated' });
+    return response.status(204);
   } catch (error) {
     return response.status(500).json({ message: 'Error updating member settings' });
   }

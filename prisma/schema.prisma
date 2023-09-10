@@ -40,21 +40,21 @@ model measurementunit {
 }
 
 model member {
-  id             Int              @id @default(autoincrement())
-  firstname      String           @db.VarChar(50)
-  lastname       String           @db.VarChar(50)
-  emailaddress   String           @db.VarChar(100)
-  password       String           @db.VarChar(100)
-  ispremium      Boolean          @default(false)
-  createdat      DateTime         @default(now()) @db.Timestamp(6)
-  editedat       DateTime         @default(now()) @db.Timestamp(6)
-  membersettings membersettings[]
+  id             Int             @id @default(autoincrement())
+  firstname      String          @db.VarChar(50)
+  lastname       String          @db.VarChar(50)
+  emailaddress   String          @db.VarChar(100)
+  password       String          @db.VarChar(100)
+  ispremium      Boolean         @default(false)
+  createdat      DateTime        @default(now()) @db.Timestamp(6)
+  editedat       DateTime        @default(now()) @db.Timestamp(6)
+  membersettings membersettings?
   recipe         recipe[]
 }
 
 model membersettings {
   id                                                                    Int               @id @default(autoincrement())
-  memberid                                                              Int
+  memberid                                                              Int               @unique
   theme                                                                 Int               @default(1)
   measurementsystem                                                     Int               @default(1)
   usepantry                                                             Boolean           @default(true)

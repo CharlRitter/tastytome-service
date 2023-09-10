@@ -15,12 +15,12 @@ export async function getRecipes(
   response: Response
 ): Promise<Response<Recipe[] | { message: string }>> {
   try {
-    const rating = parseInt(request.params?.rating as string, 10) || 0;
-    const effort = parseInt(request.params?.effort as string, 10) || 0;
-    const categories = (request.params?.categories as string) || '';
-    const orderBy: Prisma.SortOrder = request.params?.orderBy === 'asc' ? 'asc' : 'desc';
-    const page = parseInt(request.params?.page as string, 10) || 1;
-    const pageSize = parseInt(request.params?.pageSize as string, 10) || 10;
+    const rating = parseInt(request.query?.rating as string, 10) || 0;
+    const effort = parseInt(request.query?.effort as string, 10) || 0;
+    const categories = (request.query?.categories as string) || '';
+    const orderBy: Prisma.SortOrder = request.query?.orderBy === 'asc' ? 'asc' : 'desc';
+    const page = parseInt(request.query?.page as string, 10) || 1;
+    const pageSize = parseInt(request.query?.pageSize as string, 10) || 10;
     const skip = (page - 1) * pageSize;
 
     const whereConditions: Prisma.recipeWhereInput[] = [];

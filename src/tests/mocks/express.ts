@@ -1,11 +1,12 @@
 import { NextFunction, Response } from 'express';
 import { MockRequest, CustomMockRequest } from '@/types/tests';
 
-export function mockRequest({ session, params, body, header, memberId }: MockRequest): CustomMockRequest {
+export function mockRequest({ session, params, body, query, header, memberId }: MockRequest): CustomMockRequest {
   return {
     session,
     params,
     body,
+    query,
     header,
     memberId
   } as CustomMockRequest;

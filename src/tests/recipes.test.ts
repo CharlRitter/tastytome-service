@@ -91,7 +91,7 @@ describe('Recipes Controller', () => {
     const response = await getRecipes(
       mockRequest({
         ...mockRequestData,
-        params: {
+        query: {
           rating: '4',
           effort: '3',
           categories: '1,2,3',

@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
 import { member, membersettings } from '@prisma/client';
 import { isEmpty } from 'lodash';
-import jwt, { Secret } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import prisma from '@/utils/client';
+import { Error } from '@/types/controllers';
 
 interface Member extends member {
   membersettings: membersettings;
 }
 
-export async function getMember(request: Request, response: Response): Promise<Response<Member | { message: string }>> {
+export async function getMember(request: Request, response: Response): Promise<Response<Member | Error>> {
   try {
     const { memberId } = request;
     const memberContent = await prisma.member.findUnique({
@@ -27,7 +28,7 @@ export async function getMember(request: Request, response: Response): Promise<R
   }
 }
 
-export async function createMember(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function createMember(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const memberData: Omit<member, 'id'> & { password: string } = request.body;
 
@@ -71,7 +72,7 @@ export async function createMember(request: Request, response: Response): Promis
       }
     });
 
-    const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET as Secret, { expiresIn: '6h' })}`;
+    const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '6h' })}`;
 
     return response.setHeader('Authorization', token).status(201).json({ message: 'Member successfully created' });
   } catch (error) {
@@ -79,9 +80,9 @@ export async function createMember(request: Request, response: Response): Promis
   }
 }
 
-export async function updateMember(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function updateMember(request: Request, response: Response): Promise<Response<Error>> {
   try {
-    const memberData = request.body as Partial<member>;
+    const memberData = request.body;
 
     if (!memberData || isEmpty(memberData)) {
       const schema = {
@@ -111,13 +112,13 @@ export async function updateMember(request: Request, response: Response): Promis
       }
     });
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error updating member' });
   }
 }
 
-export async function deleteMember(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function deleteMember(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const { memberId } = request;
     const memberContent = await prisma.member.findUnique({ where: { id: memberId } });
@@ -128,13 +129,13 @@ export async function deleteMember(request: Request, response: Response): Promis
 
     await prisma.member.delete({ where: { id: memberId } });
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error deleting member' });
   }
 }
 
-export async function loginMember(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function loginMember(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const { emailaddress, password } = request.body;
 
@@ -150,15 +151,15 @@ export async function loginMember(request: Request, response: Response): Promise
       return response.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET as Secret, { expiresIn: '6h' })}`;
+    const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '6h' })}`;
 
-    return response.setHeader('Authorization', token).status(204);
+    return response.setHeader('Authorization', token).status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error logging in member' });
   }
 }
 
-export async function logoutMember(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function logoutMember(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const token = request.header('Authorization')?.replace('Bearer ', '');
 
@@ -166,16 +167,13 @@ export async function logoutMember(request: Request, response: Response): Promis
       return response.status(401).json({ message: 'Unauthorized: Token is missing' });
     }
 
-    return response.setHeader('Authorization', '').status(204);
+    return response.setHeader('Authorization', '').status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error logging out member' });
   }
 }
 
-export async function updateMemberPassword(
-  request: Request,
-  response: Response
-): Promise<Response<{ message: string }>> {
+export async function updateMemberPassword(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const { currentPassword, newPassword } = request.body;
 
@@ -204,16 +202,13 @@ export async function updateMemberPassword(
       data: { password: newPasswordHash }
     });
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error updating password' });
   }
 }
 
-export async function resetMemberPassword(
-  request: Request,
-  response: Response
-): Promise<Response<{ message: string }>> {
+export async function resetMemberPassword(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const { emailaddress } = request.body;
 
@@ -229,16 +224,13 @@ export async function resetMemberPassword(
 
     // TODO Implement password reset logic here (generate token and send email)
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error resetting password' });
   }
 }
 
-export async function confirmResetMemberPassword(
-  request: Request,
-  response: Response
-): Promise<Response<{ message: string }>> {
+export async function confirmResetMemberPassword(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const { token } = request.params;
     const { newPassword } = request.body;
@@ -248,7 +240,11 @@ export async function confirmResetMemberPassword(
     }
 
     // Verify the token and extract the member ID
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET as Secret) as { memberId: number };
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (typeof decodedToken === 'string') {
+      throw new Error('Invalid token');
+    }
 
     const memberContent = await prisma.member.findUnique({ where: { id: decodedToken.memberId } });
 
@@ -264,20 +260,17 @@ export async function confirmResetMemberPassword(
       data: { password: newPasswordHash }
     });
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error updating password' });
   }
 }
 
-export async function updateMemberSettings(
-  request: Request,
-  response: Response
-): Promise<Response<{ message: string }>> {
+export async function updateMemberSettings(request: Request, response: Response): Promise<Response<Error>> {
   try {
-    const memberSettingsData = request.body as Partial<membersettings>;
+    const memberSettingsData: membersettings | Record<string, never> = request.body;
 
-    if (!memberSettingsData || isEmpty(memberSettingsData)) {
+    if (!memberSettingsData) {
       const schema = {
         theme: 'integer (optional)',
         measurementsystem: 'integer (optional)',
@@ -295,13 +288,13 @@ export async function updateMemberSettings(
       include: { membersettings: true }
     });
 
-    if (isEmpty(memberContent)) {
+    if (!memberContent) {
       return response.status(404).json({ message: 'Member not found' });
     }
 
     const memberSettings = memberContent.membersettings;
 
-    if (isEmpty(memberSettings)) {
+    if (!memberSettings) {
       return response.status(404).json({ message: 'Member settings not found' });
     }
 
@@ -318,7 +311,7 @@ export async function updateMemberSettings(
       }
     });
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error updating member settings' });
   }

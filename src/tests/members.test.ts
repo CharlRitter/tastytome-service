@@ -15,7 +15,7 @@ import {
   confirmResetMemberPassword,
   updateMemberSettings
 } from '@/controllers/memberController';
-import { membersettings } from '@prisma/client';
+import { member, membersettings } from '@prisma/client';
 
 jest.mock('jsonwebtoken');
 jest.mock('bcrypt');
@@ -25,7 +25,7 @@ describe('Members', () => {
     jest.clearAllMocks();
   });
 
-  const mockMemberSettings = {
+  const mockMemberSettings: membersettings = {
     id: 1,
     theme: 1,
     measurementsystem: 1,
@@ -36,7 +36,7 @@ describe('Members', () => {
     createdat: new Date(),
     editedat: new Date()
   };
-  const mockMember = {
+  const mockMember: member & { membersettings: membersettings | null } = {
     id: 1,
     firstname: 'John',
     lastname: 'Doe',
@@ -564,7 +564,7 @@ describe('Members', () => {
     };
     const tempMockMember = cloneDeep(mockMember);
 
-    tempMockMember.membersettings = {} as membersettings;
+    tempMockMember.membersettings = null;
 
     prismaMock.member.findUnique.mockResolvedValue(tempMockMember);
 

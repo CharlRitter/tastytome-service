@@ -91,24 +91,24 @@ VALUES
   (4, NULL, 3, 'Minutes', 'min'),
   (5, NULL, 3, 'Hours', 'hr'),
   -- General Volumes
-  (6, NULL, 4, 'Cup', 'cup'),
-  (7, NULL, 4, 'Pint', 'pt'),
-  (8, NULL, 4, 'Quart', 'qt'),
-  (9, NULL, 4, 'Tablespoon', 'tbsp'),
-  (10, NULL, 4, 'Teaspoon', 'tsp'),
+  (6, NULL, 4, 'Cups', 'cup'),
+  (7, NULL, 4, 'Pints', 'pt'),
+  (8, NULL, 4, 'Quarts', 'qt'),
+  (9, NULL, 4, 'Tablespoons', 'tbsp'),
+  (10, NULL, 4, 'Teaspoons', 'tsp'),
   -- Metric Temperatures
   (11, 1, 2, 'Celsius', '°C'),
   -- Metric Volumes
-  (12, 1, 4, 'Millilitre', 'ml'),
-  (13, 1, 4, 'Litre', 'L'),
+  (12, 1, 4, 'Millilitres', 'ml'),
+  (13, 1, 4, 'Litres', 'L'),
   -- Metric Weights
-  (14, 1, 5, 'Gram', 'g'),
-  (15, 1, 5, 'Kilogram', 'kg'),
+  (14, 1, 5, 'Grams', 'g'),
+  (15, 1, 5, 'Kilograms', 'kg'),
   -- Imperial Temperatures
   (16, 2, 2, 'Fahrenheit', '°F'),
   -- Imperial Volumes
-  (17, 2, 4, 'Fluid Ounce', 'fl oz'),
-  (18, 2, 4, 'Gallon', 'gal'),
+  (17, 2, 4, 'Fluid Ounces', 'fl oz'),
+  (18, 2, 4, 'Gallons', 'gal'),
   -- Imperial Weights
-  (19, 2, 5, 'Ounce', 'oz'),
-  (20, 2, 5, 'Pound', 'lb');
+  (19, 2, 5, 'Ounces', 'oz'),
+  (20, 2, 5, 'Pounds', 'lb');

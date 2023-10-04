@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { isEmpty } from 'lodash';
 import { Prisma, recipe, recipeingredient, recipetimer } from '@prisma/client';
 import prisma from '@/utils/client';
+import { Error } from '@/types/controllers';
 
 interface Recipe extends recipe {
   recipecategories: number[];
@@ -10,26 +11,39 @@ interface Recipe extends recipe {
   recipetimers: recipetimer[];
 }
 
-export async function getRecipes(
-  request: Request,
-  response: Response
-): Promise<Response<Recipe[] | { message: string }>> {
+export async function getRecipes(request: Request, response: Response): Promise<Response<Recipe[] | Error>> {
   try {
-    const rating = parseInt(request.query?.rating as string, 10) || 0;
-    const effort = parseInt(request.query?.effort as string, 10) || 0;
-    const categories = (request.query?.categories as string) || '';
+    let rating = 0;
+    let effort = 0;
+    const categories = request.query?.categories || '';
     const orderBy: Prisma.SortOrder = request.query?.orderBy === 'asc' ? 'asc' : 'desc';
-    const page = parseInt(request.query?.page as string, 10) || 1;
-    const pageSize = parseInt(request.query?.pageSize as string, 10) || 10;
-    const skip = (page - 1) * pageSize;
+    let page = 0;
+    let pageSize = 0;
 
+    if (typeof request.query?.rating === 'string') {
+      rating = parseInt(request.query.rating, 10);
+    }
+
+    if (typeof request.query?.effort === 'string') {
+      effort = parseInt(request.query.effort, 10);
+    }
+
+    if (typeof request.query?.page === 'string') {
+      page = parseInt(request.query.page, 10);
+    }
+
+    if (typeof request.query?.pageSize === 'string') {
+      pageSize = parseInt(request.query.pageSize, 10);
+    }
+
+    const skip = (page - 1) * pageSize;
     const whereConditions: Prisma.recipeWhereInput[] = [];
 
     whereConditions.push({ memberid: request.memberId });
     whereConditions.push({ rating: { gte: rating } });
     whereConditions.push({ effort: { gte: effort } });
 
-    if (categories) {
+    if (typeof categories === 'string') {
       const categoryIds = categories.split(',').map((item) => parseInt(item, 10));
 
       whereConditions.push({ recipecategory: { some: { categoryid: { in: categoryIds } } } });
@@ -56,9 +70,9 @@ export async function getRecipes(
   }
 }
 
-export async function getRecipe(request: Request, response: Response): Promise<Response<Recipe | { message: string }>> {
+export async function getRecipe(request: Request, response: Response): Promise<Response<Recipe | Error>> {
   try {
-    const recipeId = parseInt(request.params.recipeId as string, 10);
+    const recipeId = parseInt(request.params.recipeId, 10);
     const recipeContent = await prisma.recipe.findUnique({
       where: { id: recipeId },
       include: {
@@ -86,7 +100,7 @@ export async function getRecipe(request: Request, response: Response): Promise<R
   }
 }
 
-export async function createRecipe(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function createRecipe(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const fullRecipeData: Omit<Recipe, 'id'> = request.body;
 
@@ -116,7 +130,7 @@ export async function createRecipe(request: Request, response: Response): Promis
       'recipeingredients',
       'recipeinstructions'
     ];
-    const missingFields = requiredFields.filter((field) => !(field in fullRecipeData)) as string[];
+    const missingFields = requiredFields.filter((field) => !(field in fullRecipeData));
 
     if (missingFields.length > 0) {
       return response.status(400).json({ message: `Required fields are missing: ${missingFields.join(', ')}` });
@@ -134,9 +148,7 @@ export async function createRecipe(request: Request, response: Response): Promis
     const recipeingredientsMissingFields: string[] = [];
 
     recipeingredients.forEach((item, index) => {
-      const recipeingredientMissingFields = recipeingredientRequiredFields.filter(
-        (field) => !(field in item)
-      ) as string[];
+      const recipeingredientMissingFields = recipeingredientRequiredFields.filter((field) => !(field in item));
 
       if (recipeingredientMissingFields.length > 0) {
         recipeingredientsMissingFields.push(`${index}: { ${recipeingredientMissingFields.join(', ')} }`);
@@ -144,9 +156,7 @@ export async function createRecipe(request: Request, response: Response): Promis
     });
 
     if (recipeingredientsMissingFields.length > 0) {
-      return response
-        .status(400)
-        .json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
+      return response.status(400).json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
     }
 
     // recipetimers check
@@ -155,10 +165,11 @@ export async function createRecipe(request: Request, response: Response): Promis
       const recipetimersMissingFields: string[] = [];
 
       recipetimers.forEach((item, index) => {
-        const recipetimerMissingFields = recipetimerRequiredFields.filter((field) => !(field in item)) as string[];
+        const recipetimerMissingFields = recipetimerRequiredFields.filter((field) => !(field in item));
 
         if (!('hours' in item) && !('minutes' in item)) {
-          recipetimerMissingFields.push('hours or minutes');
+          recipetimerMissingFields.push('hours');
+          recipetimerMissingFields.push('minutes');
         }
 
         if (recipetimerMissingFields.length > 0) {
@@ -173,7 +184,12 @@ export async function createRecipe(request: Request, response: Response): Promis
       }
     }
 
-    const memberid = request.memberId as number;
+    const memberid = request.memberId;
+
+    if (!memberid) {
+      throw new Error();
+    }
+
     const { title, description, image, rating, effort, measurementsystemid } = recipeData;
 
     await prisma.$transaction(async(transactionPrisma) => {
@@ -219,10 +235,10 @@ export async function createRecipe(request: Request, response: Response): Promis
   }
 }
 
-export async function updateRecipe(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function updateRecipe(request: Request, response: Response): Promise<Response<Error>> {
   try {
-    const recipeId = parseInt(request.params.recipeId as string, 10);
-    const fullRecipeData = request.body as Partial<Recipe>;
+    const recipeId = parseInt(request.params.recipeId, 10);
+    const fullRecipeData: Omit<Recipe, 'id'> = request.body;
 
     if (!fullRecipeData || isEmpty(fullRecipeData)) {
       const schema = {
@@ -262,9 +278,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
       const recipeingredientsMissingFields: string[] = [];
 
       recipeingredients.forEach((item, index) => {
-        const recipeingredientMissingFields = recipeingredientRequiredFields.filter(
-          (field) => !(field in item)
-        ) as string[];
+        const recipeingredientMissingFields = recipeingredientRequiredFields.filter((field) => !(field in item));
 
         if (recipeingredientMissingFields.length > 0) {
           recipeingredientsMissingFields.push(`${index}: { ${recipeingredientMissingFields.join(', ')} }`);
@@ -272,9 +286,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
       });
 
       if (recipeingredientsMissingFields.length > 0) {
-        return response
-          .status(400)
-          .json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
+        return response.status(400).json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
       }
     }
 
@@ -284,10 +296,11 @@ export async function updateRecipe(request: Request, response: Response): Promis
       const recipetimersMissingFields: string[] = [];
 
       recipetimers.forEach((item, index) => {
-        const recipetimerMissingFields = recipetimerRequiredFields.filter((field) => !(field in item)) as string[];
+        const recipetimerMissingFields = recipetimerRequiredFields.filter((field) => !(field in item));
 
         if (!('hours' in item) && !('minutes' in item)) {
-          recipetimerMissingFields.push('hours or minutes');
+          recipetimerMissingFields.push('hours');
+          recipetimerMissingFields.push('minutes');
         }
 
         if (recipetimerMissingFields.length > 0) {
@@ -355,15 +368,15 @@ export async function updateRecipe(request: Request, response: Response): Promis
       }
     });
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error updating recipe' });
   }
 }
 
-export async function deleteRecipe(request: Request, response: Response): Promise<Response<{ message: string }>> {
+export async function deleteRecipe(request: Request, response: Response): Promise<Response<Error>> {
   try {
-    const recipeId = parseInt(request.params.recipeId as string, 10);
+    const recipeId = parseInt(request.params.recipeId, 10);
     const recipeContent = await prisma.recipe.findUnique({ where: { id: recipeId } });
 
     if (isEmpty(recipeContent)) {
@@ -378,7 +391,7 @@ export async function deleteRecipe(request: Request, response: Response): Promis
 
     await prisma.recipe.delete({ where: { id: recipeId } });
 
-    return response.status(204);
+    return response.status(204).json();
   } catch (error) {
     return response.status(500).json({ message: 'Error deleting recipe' });
   }

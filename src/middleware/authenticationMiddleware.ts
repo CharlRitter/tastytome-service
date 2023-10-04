@@ -1,6 +1,6 @@
 import { logoutMember } from '@/controllers/memberController';
 import { Request, Response, NextFunction } from 'express';
-import jwt, { Secret } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
 // eslint-disable-next-line import/prefer-default-export
 export async function authenticateMember(request: Request, response: Response, next: NextFunction) {
@@ -11,8 +11,13 @@ export async function authenticateMember(request: Request, response: Response, n
       return response.status(401).json({ message: 'Unauthorized: Not provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as Secret) as jwt.JwtPayload;
-    const { memberId, iat: issuedAt, exp: validuntil } = decoded;
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (typeof decodedToken === 'string') {
+      throw new Error('Invalid token');
+    }
+
+    const { memberId, iat: issuedAt, exp: validuntil } = decodedToken;
 
     if (!memberId || !validuntil || !issuedAt) {
       return response.status(401).json({ message: 'Unauthorized: Invalid token' });
@@ -24,7 +29,7 @@ export async function authenticateMember(request: Request, response: Response, n
     const oneHour = 3600000;
 
     if (remainingMilliseconds <= oneHour && remainingMilliseconds >= 0) {
-      const newToken = `Bearer ${jwt.sign({ memberId }, process.env.JWT_SECRET as Secret, { expiresIn: '6h' })}`;
+      const newToken = `Bearer ${jwt.sign({ memberId }, process.env.JWT_SECRET, { expiresIn: '6h' })}`;
 
       response.setHeader('Authorization', newToken);
     } else if (currentTime >= expirationDate) {

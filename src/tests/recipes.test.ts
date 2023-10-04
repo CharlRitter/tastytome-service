@@ -6,7 +6,7 @@ import { recipe } from '@prisma/client';
 
 jest.mock('jsonwebtoken');
 
-const mockRecipe = {
+const mockRecipe: recipe = {
   id: 1,
   memberid: 1,
   title: 'Bruh',
@@ -345,7 +345,6 @@ describe('Recipes Controller', () => {
 
   it('should delete an existing recipe', async() => {
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
-    prismaMock.recipe.delete.mockResolvedValue({} as recipe);
 
     const response = await deleteRecipe(mockRequest(mockRequestData), mockResponse());
 

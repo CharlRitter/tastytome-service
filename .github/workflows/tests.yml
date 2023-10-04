@@ -1,10 +1,7 @@
 name: Run Jest Tests
-
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main, master]
   pull_request:
 
 jobs:
@@ -12,18 +9,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: yarn install
+      - name: Install dependencies
+        run: yarn install
 
-    - name: Run Jest tests
-      run: yarn test
+      - name: Run Jest tests
+        run: yarn test
 
-    - name: Archive Jest test results
-      uses: actions/upload-artifact@v2
-      with:
-        name: jest-test-results
-        path: ./coverage
-        retention-days: 30
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: jest-test-results
+          path: ./coverage
+          retention-days: 30
+
+      - name: Confirm repo builds
+        run: yarn build

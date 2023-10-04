@@ -1,11 +1,11 @@
 module.exports = {
   env: {
     node: true,
-    es2021: true
+    es2022: true
   },
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    ecmaVersion: 2022,
+    ecmaVersion: 13,
     sourceType: 'module',
     project: './tsconfig.json'
   },

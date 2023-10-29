@@ -1,21 +1,24 @@
-import { Request, Response } from 'express';
 import { member, membersettings } from '@prisma/client';
-import { isEmpty } from 'lodash';
-import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import prisma from '@/utils/client';
-import { Error } from '@/types/controllers';
+import { Request, Response } from 'express';
+import jwt, { VerifyErrors } from 'jsonwebtoken';
+import { isEmpty } from 'lodash';
 
-interface Member extends member {
+import { CLEAR_COOKIE_SETTINGS, COOKIE_SETTINGS } from '@/constants/jwt';
+import { Error } from '@/types/controllers';
+import { prismaClient } from '@/utils/client';
+import { logger } from '@/utils/logger';
+
+type Member = member & {
   membersettings: membersettings;
-}
+};
 
 export async function getMember(request: Request, response: Response): Promise<Response<Member | Error>> {
   try {
     const { memberId } = request;
-    const memberContent = await prisma.member.findUnique({
+    const memberContent = await prismaClient.member.findUnique({
       where: { id: memberId },
-      include: { membersettings: true }
+      include: { membersettings: { include: { measurementsystem: true, theme: true } } }
     });
 
     if (isEmpty(memberContent)) {
@@ -23,7 +26,9 @@ export async function getMember(request: Request, response: Response): Promise<R
     }
 
     return response.status(200).json({ data: memberContent });
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error getting member by ID' });
   }
 }
@@ -51,7 +56,7 @@ export async function createMember(request: Request, response: Response): Promis
       return response.status(400).json({ message: `Required fields are missing: ${missingFields.join(', ')}` });
     }
 
-    let memberContent = await prisma.member.findFirst({ where: { emailaddress: memberData.emailaddress } });
+    let memberContent = await prismaClient.member.findFirst({ where: { emailaddress: memberData.emailaddress } });
 
     if (!isEmpty(memberContent)) {
       return response.status(409).json({ message: 'Member already exists' });
@@ -62,7 +67,7 @@ export async function createMember(request: Request, response: Response): Promis
 
     memberData.password = passwordHash;
 
-    memberContent = await prisma.member.create({
+    memberContent = await prismaClient.member.create({
       data: {
         firstname: memberData.firstname,
         lastname: memberData.lastname,
@@ -72,10 +77,17 @@ export async function createMember(request: Request, response: Response): Promis
       }
     });
 
-    const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '6h' })}`;
+    const jwtToken = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '1h' })}`;
+    const refreshToken = jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    return response.setHeader('Authorization', token).status(201).json({ message: 'Member successfully created' });
-  } catch (error) {
+    return response
+      .header('Authorization', jwtToken)
+      .cookie('refreshToken', refreshToken, COOKIE_SETTINGS)
+      .status(201)
+      .json({ message: 'Member successfully created' });
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error creating member' });
   }
 }
@@ -96,13 +108,13 @@ export async function updateMember(request: Request, response: Response): Promis
     }
 
     const { memberId } = request;
-    const memberContent = await prisma.member.findUnique({ where: { id: memberId } });
+    const memberContent = await prismaClient.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
     }
 
-    await prisma.member.update({
+    await prismaClient.member.update({
       where: { id: memberId },
       data: {
         firstname: memberData.firstname,
@@ -113,7 +125,9 @@ export async function updateMember(request: Request, response: Response): Promis
     });
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error updating member' });
   }
 }
@@ -121,16 +135,18 @@ export async function updateMember(request: Request, response: Response): Promis
 export async function deleteMember(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const { memberId } = request;
-    const memberContent = await prisma.member.findUnique({ where: { id: memberId } });
+    const memberContent = await prismaClient.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
     }
 
-    await prisma.member.delete({ where: { id: memberId } });
+    await prismaClient.member.delete({ where: { id: memberId } });
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error deleting member' });
   }
 }
@@ -139,36 +155,39 @@ export async function loginMember(request: Request, response: Response): Promise
   try {
     const { emailaddress, password } = request.body;
 
-    const memberContent = await prisma.member.findFirst({ where: { emailaddress } });
+    const memberContent = await prismaClient.member.findFirst({ where: { emailaddress } });
 
     if (!memberContent) {
-      return response.status(401).json({ message: 'Invalid credentials' });
+      return response.status(401).json({ message: 'Invalid credentials2' });
     }
 
     const passwordMatches = await bcrypt.compare(password, memberContent.password);
 
     if (!passwordMatches) {
-      return response.status(401).json({ message: 'Invalid credentials' });
+      return response.status(401).json({ message: 'Invalid credentials1' });
     }
 
-    const token = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '6h' })}`;
+    const jwtToken = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '1h' })}`;
+    const refreshToken = jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    return response.setHeader('Authorization', token).status(204).json();
-  } catch (error) {
+    return response
+      .header('Authorization', jwtToken)
+      .cookie('refreshToken', refreshToken, COOKIE_SETTINGS)
+      .status(204)
+      .json();
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error logging in member' });
   }
 }
 
 export async function logoutMember(request: Request, response: Response): Promise<Response<Error>> {
   try {
-    const token = request.header('Authorization')?.replace('Bearer ', '');
+    return response.header('Authorization', '').clearCookie('refreshToken', CLEAR_COOKIE_SETTINGS).status(204).json();
+  } catch (error: any) {
+    logger.error(error);
 
-    if (!token) {
-      return response.status(401).json({ message: 'Unauthorized: Token is missing' });
-    }
-
-    return response.setHeader('Authorization', '').status(204).json();
-  } catch (error) {
     return response.status(500).json({ message: 'Error logging out member' });
   }
 }
@@ -182,7 +201,7 @@ export async function updateMemberPassword(request: Request, response: Response)
     }
 
     const { memberId } = request;
-    const memberContent = await prisma.member.findUnique({ where: { id: memberId } });
+    const memberContent = await prismaClient.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
@@ -197,13 +216,15 @@ export async function updateMemberPassword(request: Request, response: Response)
     const salt = await bcrypt.genSalt(10);
     const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
-    await prisma.member.update({
+    await prismaClient.member.update({
       where: { id: memberId },
       data: { password: newPasswordHash }
     });
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error updating password' });
   }
 }
@@ -216,7 +237,7 @@ export async function resetMemberPassword(request: Request, response: Response):
       return response.status(400).json({ message: 'Email address is required' });
     }
 
-    const memberContent = await prisma.member.findFirst({ where: { emailaddress } });
+    const memberContent = await prismaClient.member.findFirst({ where: { emailaddress } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
@@ -225,7 +246,9 @@ export async function resetMemberPassword(request: Request, response: Response):
     // TODO Implement password reset logic here (generate token and send email)
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error resetting password' });
   }
 }
@@ -240,13 +263,23 @@ export async function confirmResetMemberPassword(request: Request, response: Res
     }
 
     // Verify the token and extract the member ID
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    const memberId = jwt.verify(token, process.env.JWT_SECRET, (err: VerifyErrors | null, decoded: any) => {
+      if (err) {
+        return response
+          .header('Authorization', '')
+          .clearCookie('refreshToken', CLEAR_COOKIE_SETTINGS)
+          .status(401)
+          .json({ error: 'Invalid or expired token' });
+      }
 
-    if (typeof decodedToken === 'string') {
-      throw new Error('Invalid token');
+      return decoded.memberId;
+    });
+
+    if (memberId === undefined) {
+      return response.status(404).json({ message: 'Member not found' });
     }
 
-    const memberContent = await prisma.member.findUnique({ where: { id: decodedToken.memberId } });
+    const memberContent = await prismaClient.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {
       return response.status(404).json({ message: 'Member not found' });
@@ -255,13 +288,15 @@ export async function confirmResetMemberPassword(request: Request, response: Res
     const salt = await bcrypt.genSalt(10);
     const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
-    await prisma.member.update({
-      where: { id: decodedToken.memberId },
+    await prismaClient.member.update({
+      where: { id: memberId },
       data: { password: newPasswordHash }
     });
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error updating password' });
   }
 }
@@ -283,7 +318,7 @@ export async function updateMemberSettings(request: Request, response: Response)
     }
 
     const { memberId } = request;
-    const memberContent = await prisma.member.findUnique({
+    const memberContent = await prismaClient.member.findUnique({
       where: { id: memberId },
       include: { membersettings: true }
     });
@@ -300,11 +335,11 @@ export async function updateMemberSettings(request: Request, response: Response)
 
     const memberSettingsId = memberSettings.id;
 
-    await prisma.membersettings.update({
+    await prismaClient.membersettings.update({
       where: { id: memberSettingsId },
       data: {
-        theme: memberSettingsData.theme,
-        measurementsystem: memberSettingsData.measurementsystem,
+        themeid: memberSettingsData.themeid,
+        measurementsystemid: memberSettingsData.measurementsystemid,
         usepantry: memberSettingsData.usepantry,
         usenegativepantry: memberSettingsData.usenegativepantry,
         displaynutritionalinformation: memberSettingsData.displaynutritionalinformation
@@ -312,7 +347,9 @@ export async function updateMemberSettings(request: Request, response: Response)
     });
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error updating member settings' });
   }
 }

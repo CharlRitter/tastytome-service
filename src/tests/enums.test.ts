@@ -1,5 +1,6 @@
 import { category, measurementsystem, measurementtype, measurementunit, theme } from '@prisma/client';
-import prismaMock from '@/tests/mocks/prisma';
+import { mockReset } from 'jest-mock-extended';
+
 import {
   getCategories,
   getMeasurementSystems,
@@ -8,13 +9,18 @@ import {
   getThemes
 } from '@/controllers/enumController';
 import { mockRequest, mockResponse } from '@/tests/mocks/express';
+import { prismaMock } from '@/tests/mocks/prisma';
 
 describe('Enums', () => {
+  beforeEach(() => {
+    mockReset(prismaMock);
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should return categories', async() => {
+  it('should return categories', async () => {
     const mockCategories: category[] = [
       { id: 1, value: 'Appetizer' },
       { id: 2, value: 'Baking' },
@@ -42,7 +48,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith(responseCategories);
   });
 
-  it('should handle error while fetching categories', async() => {
+  it('should handle error while fetching categories', async () => {
     prismaMock.category.findMany.mockRejectedValue(new Error('Database Error'));
 
     const response = await getCategories(mockRequest({ session: {} }), mockResponse());
@@ -51,7 +57,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith({ message: 'Error getting categories' });
   });
 
-  it('should return measurement systems', async() => {
+  it('should return measurement systems', async () => {
     const mockMeasurementSystems: measurementsystem[] = [
       { id: 1, value: 'Metric' },
       { id: 2, value: 'Imperial' }
@@ -66,7 +72,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith(responseMeasurementSystems);
   });
 
-  it('should handle error while fetching measurement systems', async() => {
+  it('should handle error while fetching measurement systems', async () => {
     prismaMock.measurementsystem.findMany.mockRejectedValue(new Error('Database Error'));
 
     const response = await getMeasurementSystems(mockRequest({ session: {} }), mockResponse());
@@ -75,7 +81,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith({ message: 'Error getting measurement systems' });
   });
 
-  it('should return measurement types', async() => {
+  it('should return measurement types', async () => {
     const mockMeasurementTypes: measurementtype[] = [
       { id: 1, value: 'Number' },
       { id: 2, value: 'Temperature' },
@@ -93,7 +99,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith(responseMeasurementTypes);
   });
 
-  it('should handle error while fetching measurement types', async() => {
+  it('should handle error while fetching measurement types', async () => {
     prismaMock.measurementtype.findMany.mockRejectedValue(new Error('Database Error'));
 
     const response = await getMeasurementTypes(mockRequest({ session: {} }), mockResponse());
@@ -102,7 +108,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith({ message: 'Error getting measurement types' });
   });
 
-  it('should return measurement units', async() => {
+  it('should return measurement units', async () => {
     const mockMeasurementUnits: measurementunit[] = [
       { id: 1, measurementsystemid: null, measurementtypeid: 1, value: 'Small', abbreviation: 'sml' },
       { id: 2, measurementsystemid: null, measurementtypeid: 1, value: 'Medium', abbreviation: 'med' },
@@ -135,7 +141,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith(responseMeasurementUnits);
   });
 
-  it('should handle error while fetching measurement units', async() => {
+  it('should handle error while fetching measurement units', async () => {
     prismaMock.measurementunit.findMany.mockRejectedValue(new Error('Database Error'));
 
     const response = await getMeasurementUnits(mockRequest({ session: {} }), mockResponse());
@@ -144,7 +150,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith({ message: 'Error getting measurement units' });
   });
 
-  it('should return themes', async() => {
+  it('should return themes', async () => {
     const mockThemes: theme[] = [
       { id: 1, value: 'System' },
       { id: 2, value: 'Dark' },
@@ -160,7 +166,7 @@ describe('Enums', () => {
     expect(response.json).toHaveBeenCalledWith(responseThemes);
   });
 
-  it('should handle error while fetching themes', async() => {
+  it('should handle error while fetching themes', async () => {
     prismaMock.theme.findMany.mockRejectedValue(new Error('Database Error'));
 
     const response = await getThemes(mockRequest({ session: {} }), mockResponse());

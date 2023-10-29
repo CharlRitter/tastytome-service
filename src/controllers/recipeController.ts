@@ -1,15 +1,17 @@
+import { Prisma, recipe, recipeingredient, recipetimer } from '@prisma/client';
 import { Request, Response } from 'express';
 import { isEmpty } from 'lodash';
-import { Prisma, recipe, recipeingredient, recipetimer } from '@prisma/client';
-import prisma from '@/utils/client';
-import { Error } from '@/types/controllers';
 
-interface Recipe extends recipe {
+import { Error } from '@/types/controllers';
+import { prismaClient } from '@/utils/client';
+import { logger } from '@/utils/logger';
+
+type Recipe = recipe & {
   recipecategories: number[];
   recipeingredients: recipeingredient[];
   recipeinstructions: string[];
   recipetimers: recipetimer[];
-}
+};
 
 export async function getRecipes(request: Request, response: Response): Promise<Response<Recipe[] | Error>> {
   try {
@@ -18,7 +20,7 @@ export async function getRecipes(request: Request, response: Response): Promise<
     const categories = request.query?.categories || '';
     const orderBy: Prisma.SortOrder = request.query?.orderBy === 'asc' ? 'asc' : 'desc';
     let page = 0;
-    let pageSize = 0;
+    let pageSize = 10;
 
     if (typeof request.query?.rating === 'string') {
       rating = parseInt(request.query.rating, 10);
@@ -43,13 +45,13 @@ export async function getRecipes(request: Request, response: Response): Promise<
     whereConditions.push({ rating: { gte: rating } });
     whereConditions.push({ effort: { gte: effort } });
 
-    if (typeof categories === 'string') {
+    if (categories && typeof categories === 'string') {
       const categoryIds = categories.split(',').map((item) => parseInt(item, 10));
 
       whereConditions.push({ recipecategory: { some: { categoryid: { in: categoryIds } } } });
     }
 
-    const recipes = await prisma.recipe.findMany({
+    const recipes = await prismaClient.recipe.findMany({
       where: { AND: whereConditions },
       include: {
         measurementsystem: true,
@@ -62,18 +64,20 @@ export async function getRecipes(request: Request, response: Response): Promise<
       skip,
       take: pageSize
     });
-    const totalCount = await prisma.recipe.count({ where: { AND: whereConditions } });
+    const totalCount = await prismaClient.recipe.count({ where: { AND: whereConditions } });
 
     return response.status(200).json({ data: recipes, meta: { totalCount } });
-  } catch (error) {
-    return response.status(500).json({ message: 'Error getting recipe' });
+  } catch (error: any) {
+    logger.error(error);
+
+    return response.status(500).json({ message: 'Error getting recipes' });
   }
 }
 
 export async function getRecipe(request: Request, response: Response): Promise<Response<Recipe | Error>> {
   try {
     const recipeId = parseInt(request.params.recipeId, 10);
-    const recipeContent = await prisma.recipe.findUnique({
+    const recipeContent = await prismaClient.recipe.findUnique({
       where: { id: recipeId },
       include: {
         measurementsystem: true,
@@ -95,7 +99,9 @@ export async function getRecipe(request: Request, response: Response): Promise<R
     }
 
     return response.status(200).json({ data: recipeContent });
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error getting recipe' });
   }
 }
@@ -156,7 +162,11 @@ export async function createRecipe(request: Request, response: Response): Promis
     });
 
     if (recipeingredientsMissingFields.length > 0) {
-      return response.status(400).json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
+      return response
+        .status(400)
+        .json({
+          message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}`
+        });
     }
 
     // recipetimers check
@@ -192,7 +202,7 @@ export async function createRecipe(request: Request, response: Response): Promis
 
     const { title, description, image, rating, effort, measurementsystemid } = recipeData;
 
-    await prisma.$transaction(async(transactionPrisma) => {
+    await prismaClient.$transaction(async (transactionPrisma) => {
       const newRecipe = await transactionPrisma.recipe.create({
         data: {
           memberid,
@@ -205,7 +215,9 @@ export async function createRecipe(request: Request, response: Response): Promis
         }
       });
 
-      await transactionPrisma.recipecategory.createMany({ data: recipecategories.map((item) => ({ recipeid: newRecipe.id, categoryid: item })) });
+      await transactionPrisma.recipecategory.createMany({
+        data: recipecategories.map((item) => ({ recipeid: newRecipe.id, categoryid: item }))
+      });
       await transactionPrisma.recipeingredient.createMany({
         data: recipeingredients.map((item) => ({
           recipeid: newRecipe.id,
@@ -215,7 +227,9 @@ export async function createRecipe(request: Request, response: Response): Promis
           measurementamount: item.measurementamount
         }))
       });
-      await transactionPrisma.recipeinstruction.createMany({ data: recipeinstructions.map((item) => ({ recipeid: newRecipe.id, title: item })) });
+      await transactionPrisma.recipeinstruction.createMany({
+        data: recipeinstructions.map((item) => ({ recipeid: newRecipe.id, title: item }))
+      });
 
       if (recipetimers && recipetimers.length > 0) {
         await transactionPrisma.recipetimer.createMany({
@@ -230,7 +244,9 @@ export async function createRecipe(request: Request, response: Response): Promis
     });
 
     return response.status(201).json({ message: 'Recipe successfully created' });
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error creating recipe' });
   }
 }
@@ -259,7 +275,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
       return response.status(200).json({ data: schema });
     }
 
-    const recipeContent = await prisma.recipe.findUnique({ where: { id: recipeId } });
+    const recipeContent = await prismaClient.recipe.findUnique({ where: { id: recipeId } });
 
     if (isEmpty(recipeContent)) {
       return response.status(404).json({ message: 'Recipe not found' });
@@ -286,7 +302,11 @@ export async function updateRecipe(request: Request, response: Response): Promis
       });
 
       if (recipeingredientsMissingFields.length > 0) {
-        return response.status(400).json({ message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}` });
+        return response
+          .status(400)
+          .json({
+            message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}`
+          });
       }
     }
 
@@ -320,7 +340,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
       return response.status(401).json({ message: 'Unauthorised: This recipe does not belong to you' });
     }
 
-    await prisma.$transaction(async(transactionPrisma) => {
+    await prismaClient.$transaction(async (transactionPrisma) => {
       const { title, description, rating, effort, measurementsystemid } = recipeData;
       const data: Partial<recipe> = {};
 
@@ -337,7 +357,9 @@ export async function updateRecipe(request: Request, response: Response): Promis
 
       if (recipecategories && recipecategories.length > 0) {
         await transactionPrisma.recipecategory.deleteMany({ where: { recipeid: updatedRecipe.id } });
-        await transactionPrisma.recipecategory.createMany({ data: recipecategories.map((item) => ({ recipeid: updatedRecipe.id, categoryid: item })) });
+        await transactionPrisma.recipecategory.createMany({
+          data: recipecategories.map((item) => ({ recipeid: updatedRecipe.id, categoryid: item }))
+        });
       }
       if (recipeingredients && recipeingredients.length > 0) {
         await transactionPrisma.recipeingredient.deleteMany({ where: { recipeid: updatedRecipe.id } });
@@ -353,7 +375,9 @@ export async function updateRecipe(request: Request, response: Response): Promis
       }
       if (recipeinstructions && recipeinstructions.length > 0) {
         await transactionPrisma.recipeinstruction.deleteMany({ where: { recipeid: updatedRecipe.id } });
-        await transactionPrisma.recipeinstruction.createMany({ data: recipeinstructions.map((item) => ({ recipeid: updatedRecipe.id, title: item })) });
+        await transactionPrisma.recipeinstruction.createMany({
+          data: recipeinstructions.map((item) => ({ recipeid: updatedRecipe.id, title: item }))
+        });
       }
       if (recipetimers && recipetimers.length > 0) {
         await transactionPrisma.recipetimer.deleteMany({ where: { recipeid: updatedRecipe.id } });
@@ -369,7 +393,9 @@ export async function updateRecipe(request: Request, response: Response): Promis
     });
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error updating recipe' });
   }
 }
@@ -377,7 +403,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
 export async function deleteRecipe(request: Request, response: Response): Promise<Response<Error>> {
   try {
     const recipeId = parseInt(request.params.recipeId, 10);
-    const recipeContent = await prisma.recipe.findUnique({ where: { id: recipeId } });
+    const recipeContent = await prismaClient.recipe.findUnique({ where: { id: recipeId } });
 
     if (isEmpty(recipeContent)) {
       return response.status(404).json({ message: 'Recipe not found' });
@@ -389,10 +415,12 @@ export async function deleteRecipe(request: Request, response: Response): Promis
       return response.status(401).json({ message: 'Unauthorised: This recipe does not belong to you' });
     }
 
-    await prisma.recipe.delete({ where: { id: recipeId } });
+    await prismaClient.recipe.delete({ where: { id: recipeId } });
 
     return response.status(204).json();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(500).json({ message: 'Error deleting recipe' });
   }
 }

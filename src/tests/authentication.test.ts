@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { mockRequest, mockResponse, mockNext } from '@/tests/mocks/express';
+
 import { logoutMember } from '@/controllers/memberController';
 import { authenticateMember } from '@/middleware/authenticationMiddleware';
+import { mockNext, mockRequest, mockResponse } from '@/tests/mocks/express';
 
 jest.mock('jsonwebtoken');
 jest.mock('@/controllers/memberController', () => ({ logoutMember: jest.fn().mockResolvedValue({}) }));
@@ -16,7 +17,7 @@ describe('authenticateMember middleware', () => {
   const mockRequestInstance = mockRequest({ headers: {} });
   const jwtMock = jwt as jest.Mocked<typeof import('jsonwebtoken')>;
 
-  it('should return 401 if token is missing', async() => {
+  it('should return 401 if token is missing', async () => {
     mockRequestInstance.header = jest.fn().mockReturnValue(undefined);
 
     const request = mockRequest(mockRequestInstance);
@@ -26,11 +27,11 @@ describe('authenticateMember middleware', () => {
     await authenticateMember(request, response, next);
 
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorized: Not provided' });
+    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorized: Invalid token' });
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should return 401 if token is invalid', async() => {
+  it('should return 401 if token is invalid', async () => {
     mockRequestInstance.header = jest.fn().mockReturnValue(new Error('Database Error'));
     jwtMock.verify.mockReturnValue();
 
@@ -45,7 +46,7 @@ describe('authenticateMember middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should return 401 if error', async() => {
+  it('should return 401 if error', async () => {
     mockRequestInstance.header = jest.fn().mockReturnValue('invalid_token');
     jwtMock.verify.mockReturnValue();
 
@@ -60,7 +61,7 @@ describe('authenticateMember middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('should set request.memberId and call next for a valid token', async() => {
+  it('should set request.memberId and call next for a valid token', async () => {
     const validDecodedToken = {
       memberId,
       iat: Math.floor(Date.now() / 1000),
@@ -82,7 +83,7 @@ describe('authenticateMember middleware', () => {
     expect(request.memberId).toBe(parseInt(memberId, 10));
   });
 
-  it('should refresh token and call next for a token expiring within 1 hour', async() => {
+  it('should refresh token and call next for a token expiring within 1 hour', async () => {
     const soonToExpireDecodedToken = {
       memberId,
       iat: Math.floor(Date.now() / 1000) - 3600,
@@ -104,10 +105,10 @@ describe('authenticateMember middleware', () => {
     expect(response.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
     expect(request.memberId).toBe(parseInt(memberId, 10));
-    expect(response.setHeader).toHaveBeenCalledWith('Authorization', `Bearer ${newToken}`);
+    expect(response.header).toHaveBeenCalledWith('Authorization', `Bearer ${newToken}`);
   });
 
-  it('should call logoutMember if token cannot be refreshed', async() => {
+  it('should call logoutMember if token cannot be refreshed', async () => {
     const soonToExpireDecodedToken = {
       memberId,
       iat: Math.floor(Date.now() / 1000) - 3600,
@@ -130,7 +131,7 @@ describe('authenticateMember middleware', () => {
     expect(logoutMember).toHaveBeenCalledWith(request, response);
   });
 
-  it('should return 401 with proper message for invalid token', async() => {
+  it('should return 401 with proper message for invalid token', async () => {
     const brokenDecodedToken = {
       memberId,
       iat: Math.floor(Date.now() / 1000)

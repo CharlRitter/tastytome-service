@@ -1,5 +1,6 @@
 import { NextFunction, Response } from 'express';
-import { MockRequest, CustomMockRequest } from '@/types/tests';
+
+import { CustomMockRequest, MockRequest } from '@/types/tests';
 
 export function mockRequest({ session, params, body, query, header, memberId }: MockRequest): CustomMockRequest {
   return {
@@ -18,7 +19,7 @@ export function mockResponse(): Response {
   response.status = jest.fn().mockReturnValue(response);
   response.json = jest.fn().mockReturnValue(response);
   response.header = jest.fn().mockReturnValue(response);
-  response.setHeader = jest.fn().mockReturnValue(response);
+  response.header = jest.fn().mockReturnValue(response);
 
   return response;
 }

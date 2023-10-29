@@ -1,45 +1,62 @@
-import { logoutMember } from '@/controllers/memberController';
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { NextFunction, Request, Response } from 'express';
+import jwt, { VerifyErrors } from 'jsonwebtoken';
 
-// eslint-disable-next-line import/prefer-default-export
+import { CLEAR_COOKIE_SETTINGS } from '@/constants/jwt';
+import { logger } from '@/utils/logger';
+
 export async function authenticateMember(request: Request, response: Response, next: NextFunction) {
   try {
     const token = request.header('Authorization')?.replace('Bearer ', '');
+    const cookie = request.cookies.refreshToken;
 
-    if (!token) {
-      return response.status(401).json({ message: 'Unauthorized: Not provided' });
+    if (!token || !cookie) {
+      return response
+        .header('Authorization', '')
+        .clearCookie('refreshToken', CLEAR_COOKIE_SETTINGS)
+        .status(401)
+        .json({ message: 'Token not found' });
     }
 
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    const newJwtToken = jwt.verify(cookie, process.env.JWT_SECRET, (err: VerifyErrors | null, decoded: any) => {
+      if (err) {
+        return response
+          .header('Authorization', '')
+          .clearCookie('refreshToken', CLEAR_COOKIE_SETTINGS)
+          .status(401)
+          .json({ error: 'Invalid or expired token' });
+      }
 
-    if (typeof decodedToken === 'string') {
-      throw new Error('Invalid token');
+      return `Bearer ${jwt.sign({ memberId: decoded.memberId }, process.env.JWT_SECRET, { expiresIn: '1h' })}`;
+    });
+
+    if (newJwtToken === undefined) {
+      throw Error();
     }
 
-    const { memberId, iat: issuedAt, exp: validuntil } = decodedToken;
+    response.header('Authorization', newJwtToken);
 
-    if (!memberId || !validuntil || !issuedAt) {
-      return response.status(401).json({ message: 'Unauthorized: Invalid token' });
+    const memberId = jwt.verify(token, process.env.JWT_SECRET, (err: VerifyErrors | null, decoded: any) => {
+      if (err) {
+        return response
+          .header('Authorization', '')
+          .clearCookie('refreshToken', CLEAR_COOKIE_SETTINGS)
+          .status(401)
+          .json({ error: 'Invalid or expired token' });
+      }
+
+      return parseInt(decoded.memberId, 10);
+    });
+
+    if (memberId === undefined) {
+      throw Error();
     }
 
-    const expirationDate = new Date(validuntil * 1000);
-    const currentTime = new Date();
-    const remainingMilliseconds = expirationDate.getTime() - currentTime.getTime();
-    const oneHour = 3600000;
-
-    if (remainingMilliseconds <= oneHour && remainingMilliseconds >= 0) {
-      const newToken = `Bearer ${jwt.sign({ memberId }, process.env.JWT_SECRET, { expiresIn: '6h' })}`;
-
-      response.setHeader('Authorization', newToken);
-    } else if (currentTime >= expirationDate) {
-      return await logoutMember(request, response);
-    }
-
-    request.memberId = parseInt(memberId, 10);
+    request.memberId = memberId;
 
     return next();
-  } catch (error) {
+  } catch (error: any) {
+    logger.error(error);
+
     return response.status(401).json({ message: 'Unauthorized: Invalid token' });
   }
 }

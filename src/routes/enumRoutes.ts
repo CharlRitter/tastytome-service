@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import {
   getCategories,
   getMeasurementSystems,
@@ -7,12 +8,10 @@ import {
   getThemes
 } from '@/controllers/enumController';
 
-const router = Router();
+export const enumRoutes = Router();
 
-router.get('/v1/enum/categories', getCategories);
-router.get('/v1/enum/measurement-systems', getMeasurementSystems);
-router.get('/v1/enum/measurement-types', getMeasurementTypes);
-router.get('/v1/enum/measurement-units', getMeasurementUnits);
-router.get('/v1/enum/themes', getThemes);
-
-export default router;
+enumRoutes.get('/v1/enum/categories', getCategories);
+enumRoutes.get('/v1/enum/measurement-systems', getMeasurementSystems);
+enumRoutes.get('/v1/enum/measurement-types', getMeasurementTypes);
+enumRoutes.get('/v1/enum/measurement-units', getMeasurementUnits);
+enumRoutes.get('/v1/enum/themes', getThemes);

@@ -14,8 +14,8 @@ CREATE TABLE Member (
 CREATE TABLE MemberSettings (
   id SERIAL PRIMARY KEY,
   memberId INT UNIQUE NOT NULL,
-  theme INT NOT NULL DEFAULT 1,
-  measurementSystem INT NOT NULL DEFAULT 1,
+  themeId INT NOT NULL DEFAULT 1,
+  measurementSystemId INT NOT NULL DEFAULT 1,
   usePantry BOOLEAN NOT NULL DEFAULT TRUE,
   useNegativePantry BOOLEAN NOT NULL DEFAULT FALSE,
   displayNutritionalInformation BOOLEAN NOT NULL DEFAULT TRUE,

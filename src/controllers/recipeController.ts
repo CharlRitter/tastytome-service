@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { isEmpty } from 'lodash';
 
 import { Error } from '@/types/controllers';
-import { prismaClient } from '@/utils/client';
+import prismaClient from '@/utils/client';
 import { logger } from '@/utils/logger';
 
 type Recipe = recipe & {
@@ -162,11 +162,9 @@ export async function createRecipe(request: Request, response: Response): Promis
     });
 
     if (recipeingredientsMissingFields.length > 0) {
-      return response
-        .status(400)
-        .json({
-          message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}`
-        });
+      return response.status(400).json({
+        message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}`
+      });
     }
 
     // recipetimers check
@@ -302,11 +300,9 @@ export async function updateRecipe(request: Request, response: Response): Promis
       });
 
       if (recipeingredientsMissingFields.length > 0) {
-        return response
-          .status(400)
-          .json({
-            message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}`
-          });
+        return response.status(400).json({
+          message: `Required fields are missing in recipeingredients: ${recipeingredientsMissingFields.join(', ')}`
+        });
       }
     }
 

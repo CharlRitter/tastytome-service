@@ -1,14 +1,18 @@
 class Logger {
-  public info(logText: string): void {
-    console.log(`${new Date()} INFO: ${logText}`);
+  private logPrefix(logLevel: string): string {
+    return `${new Date()} ${logLevel}:`;
   }
 
-  public debug(logText: string): void {
-    console.log('\x1b[33m%s\x1b[0m', `${new Date()} DEBUG: ${logText}`);
+  public info(...args: any[]): void {
+    console.log(this.logPrefix('INFO'), ...args);
   }
 
-  public error(logText: string): void {
-    console.log('\x1b[31m%s\x1b[0m', `${new Date()} ERROR: ${logText}`);
+  public debug(...args: any[]): void {
+    console.log('\x1b[33m%s\x1b[0m', this.logPrefix('DEBUG'), ...args);
+  }
+
+  public error(...args: any[]): void {
+    console.log('\x1b[31m%s\x1b[0m', this.logPrefix('ERROR'), ...args);
   }
 }
 

@@ -1,22 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
+    "target": "ESNext",
+    "module": "ESNext",
     "outDir": "dist",
-    "lib": ["ES2022"],
     "moduleResolution": "node",
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "baseUrl": "./",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     },
     "types": ["node"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts","tests/**/*.ts","jest.config.ts",".eslintrc.js"],
   "exclude": ["node_modules", "dist", "prisma"],
   "types": ["jest", "node"]
 }

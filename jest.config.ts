@@ -3,7 +3,7 @@
  * https://jestjs.io/docs/configuration
  */
 
-import { Config } from "jest";
+import { Config } from 'jest';
 
 const config: Config = {
   // All imported modules in your tests should be mocked automatically
@@ -29,7 +29,6 @@ const config: Config = {
 
   // An array of regexp pattern strings used to skip coverage collection
   coveragePathIgnorePatterns: ['<rootDir>/dist/', '<rootDir>/node_modules/'],
-
 
   // Indicates which provider should be used to instrument code for coverage
   coverageProvider: 'babel',
@@ -96,7 +95,7 @@ const config: Config = {
   // notifyMode: "failure-change",
 
   // A preset that is used as a base for Jest's configuration
-  // preset: undefined,
+  preset: 'ts-jest',
 
   // Run tests from one or more projects
   // projects: undefined,
@@ -131,7 +130,7 @@ const config: Config = {
   // setupFiles: [],
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
-  // setupFilesAfterEnv: ['<rootDir>/tests/mocks/**/*.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/mocks/prisma.ts'],
 
   // The number of seconds after which a test is considered as slow and reported as such in the results.
   // slowTestThreshold: 5,

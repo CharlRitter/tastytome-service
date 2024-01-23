@@ -3,8 +3,9 @@ import { mockReset } from 'jest-mock-extended';
 import { cloneDeep } from 'lodash';
 
 import { createRecipe, deleteRecipe, getRecipe, getRecipes, updateRecipe } from '@/controllers/recipeController';
-import { mockRequest, mockResponse } from '@/tests/mocks/express';
-import { prismaMock } from '@/tests/mocks/prisma';
+
+import { mockRequest, mockResponse } from './mocks/express';
+import { prismaMock } from './mocks/prisma';
 
 jest.mock('jsonwebtoken');
 
@@ -20,10 +21,9 @@ const mockRecipe: recipe = {
   createdat: new Date(),
   editedat: new Date()
 };
-
-const mockRecipeId = 1;
-const mockRequestData = {
-  params: { id: mockRecipeId },
+const baseRequestData = {
+  headers: { Authorization: 'Bearer valid_token' },
+  cookies: { refreshToken: 'valid_token' },
   memberId: mockRecipe.memberid
 };
 
@@ -90,81 +90,95 @@ describe('Recipes Controller', () => {
     ];
     const totalCount = 1;
     const responseRecipe = { data: mockRecipes, meta: { totalCount } };
+    const response = mockResponse();
+    const request = mockRequest({
+      ...baseRequestData,
+      query: {
+        rating: '4',
+        effort: '3',
+        categories: '1,2,3',
+        orderBy: 'asc',
+        page: '1',
+        pageSize: '10'
+      }
+    });
 
     prismaMock.recipe.findMany.mockResolvedValue(mockRecipes);
     prismaMock.recipe.count.mockResolvedValue(totalCount);
 
-    const response = await getRecipes(
-      mockRequest({
-        ...mockRequestData,
-        query: {
-          rating: '4',
-          effort: '3',
-          categories: '1,2,3',
-          orderBy: 'asc',
-          page: '1',
-          pageSize: '10'
-        }
-      }),
-      mockResponse()
-    );
+    await getRecipes(request, response);
 
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.json).toHaveBeenCalledWith(responseRecipe);
   });
 
   it('should handle error while fetching recipes', async () => {
+    const response = mockResponse();
+    const request = mockRequest({});
+
     prismaMock.recipe.findMany.mockRejectedValue(new Error('Database Error'));
 
-    const response = await getRecipes(mockRequest({}), mockResponse());
+    await getRecipes(request, response);
 
     expect(response.status).toHaveBeenCalledWith(500);
     expect(response.json).toHaveBeenCalledWith({ message: 'Error getting recipes' });
   });
 
   it('should return recipe', async () => {
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
     const responseRecipe = { data: mockRecipe };
 
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
 
-    const response = await getRecipe(mockRequest(mockRequestData), mockResponse());
+    await getRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.json).toHaveBeenCalledWith(responseRecipe);
   });
 
   it('should handle error when recipe not found while fetching recipe by ID', async () => {
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
     prismaMock.recipe.findUnique.mockResolvedValue(null);
 
-    const response = await getRecipe(mockRequest(mockRequestData), mockResponse());
+    await getRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ message: 'Recipe not found' });
   });
 
   it("should handle error when user doesn't own the recipe while fetching recipe by ID", async () => {
+    const response = mockResponse();
+    const localbaseRequestData = cloneDeep(baseRequestData);
+    localbaseRequestData.memberId = 2;
+    const request = mockRequest(localbaseRequestData);
+
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
 
-    const localMockRequestData = cloneDeep(mockRequestData);
-
-    localMockRequestData.memberId = 2;
-    const response = await getRecipe(mockRequest(localMockRequestData), mockResponse());
+    await getRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(401);
     expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorised: This recipe does not belong to you' });
   });
 
   it('should handle error while fetching recipe by ID', async () => {
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
     prismaMock.recipe.findUnique.mockRejectedValue(new Error('Database Error'));
 
-    const response = await getRecipe(mockRequest(mockRequestData), mockResponse());
+    await getRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(500);
     expect(response.json).toHaveBeenCalledWith({ message: 'Error getting recipe' });
   });
 
   it('should create a new recipe', async () => {
-    const thisMockRequestData = {
+    const response = mockResponse();
+    const thisbaseRequestData = {
       title: 'Bruh',
       description: 'Cool Description',
       measurementsystemid: 1,
@@ -180,19 +194,23 @@ describe('Recipes Controller', () => {
       recipeinstructions: ['step 1', 'step 2'],
       recipetimers: [{ title: 'Timer', hours: 1 }]
     };
+    const request = mockRequest({ ...baseRequestData, body: thisbaseRequestData });
 
     prismaMock.recipe.create.mockResolvedValue(mockRecipe);
 
-    const response = await createRecipe(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
+    await createRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(201);
     expect(response.json).toHaveBeenCalledWith({ message: 'Recipe successfully created' });
   });
 
   it('should return schema when no body', async () => {
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
     prismaMock.recipe.create.mockResolvedValue(mockRecipe);
 
-    const response = await createRecipe(mockRequest({ ...mockRequestData }), mockResponse());
+    await createRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.json).toHaveBeenCalledWith({
@@ -214,7 +232,8 @@ describe('Recipes Controller', () => {
   });
 
   it('should handle error when recipeingredients are missing while creating a new recipe', async () => {
-    const thisMockRequestData = {
+    const response = mockResponse();
+    const thisbaseRequestData = {
       title: 'Bruh',
       description: 'Cool Description',
       measurementsystemid: 1,
@@ -222,17 +241,17 @@ describe('Recipes Controller', () => {
       recipeinstructions: ['step 1', 'step 2'],
       recipetimers: [{ title: 'Timer', hours: 1 }]
     };
+    const request = mockRequest({ ...baseRequestData, body: thisbaseRequestData });
 
-    const response = await createRecipe(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
+    await createRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(400);
     expect(response.json).toHaveBeenCalledWith({ message: 'Required fields are missing: recipeingredients' });
   });
 
   it('should handle error while creating a new recipe', async () => {
-    prismaMock.$transaction.mockRejectedValue(new Error('Database Error'));
-
-    const thisMockRequestData = {
+    const response = mockResponse();
+    const thisbaseRequestData = {
       title: 'Bruh',
       description: 'Cool Description',
       measurementsystemid: 1,
@@ -248,31 +267,40 @@ describe('Recipes Controller', () => {
       recipeinstructions: ['step 1', 'step 2'],
       recipetimers: [{ title: 'Timer', hours: 1 }]
     };
-    const response = await createRecipe(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
+    const request = mockRequest({ ...baseRequestData, body: thisbaseRequestData });
+
+    prismaMock.$transaction.mockRejectedValue(new Error('Database Error'));
+
+    await createRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(500);
     expect(response.json).toHaveBeenCalledWith({ message: 'Error creating recipe' });
   });
 
   it('should update an existing recipe', async () => {
-    const thisMockRequestData = {
+    const response = mockResponse();
+    const thisbaseRequestData = {
       title: 'Bruh',
       description: 'Cool Description',
       measurementsystemid: 1,
       recipeinstructions: ['step 1', 'step 2'],
       recipetimers: [{ title: 'Timer', hours: 1 }]
     };
+    const request = mockRequest({ ...baseRequestData, body: thisbaseRequestData });
 
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
     prismaMock.recipe.update.mockResolvedValue(mockRecipe);
 
-    const response = await updateRecipe(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
+    await updateRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(204);
   });
 
   it('should return schema when no body', async () => {
-    const response = await updateRecipe(mockRequest({ ...mockRequestData }), mockResponse());
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
+    await updateRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(200);
     expect(response.json).toHaveBeenCalledWith({
@@ -294,95 +322,111 @@ describe('Recipes Controller', () => {
   });
 
   it('should handle error when recipe not found while updating an existing recipe', async () => {
-    prismaMock.recipe.findUnique.mockResolvedValue(null);
-
-    const thisMockRequestData = {
+    const response = mockResponse();
+    const thisbaseRequestData = {
       title: 'Bruh',
       description: 'Cool Description',
       measurementsystemid: 1,
       recipeinstructions: ['step 1', 'step 2'],
       recipetimers: [{ title: 'Timer', hours: 1 }]
     };
-    const response = await updateRecipe(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
+    const request = mockRequest({ ...baseRequestData, body: thisbaseRequestData });
+
+    prismaMock.recipe.findUnique.mockResolvedValue(null);
+
+    await updateRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ message: 'Recipe not found' });
   });
 
   it("should handle error when user doesn't own the recipe while updating an existing recipe", async () => {
-    prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
-
-    const thisMockRequestData = {
+    const response = mockResponse();
+    const thisbaseRequestData = {
       title: 'Bruh',
       description: 'Cool Description',
       measurementsystemid: 1,
       recipeinstructions: ['step 1', 'step 2'],
       recipetimers: [{ title: 'Timer', hours: 1 }]
     };
-    const localMockRequestData = cloneDeep(mockRequestData);
+    const localbaseRequestData = cloneDeep(baseRequestData);
+    localbaseRequestData.memberId = 2;
+    const request = mockRequest({ ...localbaseRequestData, body: thisbaseRequestData });
 
-    localMockRequestData.memberId = 2;
 
-    const response = await updateRecipe(
-      mockRequest({ ...localMockRequestData, body: thisMockRequestData }),
-      mockResponse()
-    );
+    prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
+
+    await updateRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(401);
     expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorised: This recipe does not belong to you' });
   });
 
   it('should handle error when database transaction fails while updating an existing recipe', async () => {
-    prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
-    prismaMock.$transaction.mockRejectedValue(new Error('Database Error'));
-
-    const thisMockRequestData = {
+    const response = mockResponse();
+    const thisbaseRequestData = {
       title: 'Bruh',
       description: 'Cool Description',
       measurementsystemid: 1,
       recipeinstructions: ['step 1', 'step 2'],
       recipetimers: [{ title: 'Timer', hours: 1 }]
     };
-    const response = await updateRecipe(mockRequest({ ...mockRequestData, body: thisMockRequestData }), mockResponse());
+    const request = mockRequest({ ...baseRequestData, body: thisbaseRequestData });
+
+    prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
+    prismaMock.$transaction.mockRejectedValue(new Error('Database Error'));
+
+    await updateRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(500);
     expect(response.json).toHaveBeenCalledWith({ message: 'Error updating recipe' });
   });
 
   it('should delete an existing recipe', async () => {
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
 
-    const response = await deleteRecipe(mockRequest(mockRequestData), mockResponse());
+    await deleteRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(204);
   });
 
   it('should handle error when recipe not found while deleting an existing recipe', async () => {
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
     prismaMock.recipe.findUnique.mockResolvedValue(null);
 
-    const response = await deleteRecipe(mockRequest(mockRequestData), mockResponse());
+    await deleteRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(404);
     expect(response.json).toHaveBeenCalledWith({ message: 'Recipe not found' });
   });
 
   it("should handle error when user doesn't own the recipe while deleting an existing recipe", async () => {
+    const response = mockResponse();
+    const localbaseRequestData = cloneDeep(baseRequestData);
+    localbaseRequestData.memberId = 2;
+    const request = mockRequest(localbaseRequestData);
+
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
 
-    const localMockRequestData = cloneDeep(mockRequestData);
-
-    localMockRequestData.memberId = 2;
-    const response = await deleteRecipe(mockRequest(localMockRequestData), mockResponse());
+    await deleteRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(401);
     expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorised: This recipe does not belong to you' });
   });
 
   it('should handle error when database transaction fails while deleting an existing recipe', async () => {
+    const response = mockResponse();
+    const request = mockRequest(baseRequestData);
+
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
     prismaMock.recipe.delete.mockRejectedValue(new Error('Database Error'));
 
-    const response = await deleteRecipe(mockRequest(mockRequestData), mockResponse());
+    await deleteRecipe(request, response);
 
     expect(response.status).toHaveBeenCalledWith(500);
     expect(response.json).toHaveBeenCalledWith({ message: 'Error deleting recipe' });

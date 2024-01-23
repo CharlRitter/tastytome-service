@@ -1,12 +1,12 @@
 import { member, membersettings } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
-import jwt, { VerifyErrors } from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import { isEmpty } from 'lodash';
 
 import { CLEAR_COOKIE_SETTINGS, COOKIE_SETTINGS } from '@/constants/jwt';
 import { Error } from '@/types/controllers';
-import { prismaClient } from '@/utils/client';
+import prismaClient from '@/utils/client';
 import { logger } from '@/utils/logger';
 
 type Member = member & {
@@ -158,13 +158,13 @@ export async function loginMember(request: Request, response: Response): Promise
     const memberContent = await prismaClient.member.findFirst({ where: { emailaddress } });
 
     if (!memberContent) {
-      return response.status(401).json({ message: 'Invalid credentials2' });
+      return response.status(401).json({ message: 'Invalid credentials' });
     }
 
     const passwordMatches = await bcrypt.compare(password, memberContent.password);
 
     if (!passwordMatches) {
-      return response.status(401).json({ message: 'Invalid credentials1' });
+      return response.status(401).json({ message: 'Invalid credentials' });
     }
 
     const jwtToken = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '1h' })}`;
@@ -263,22 +263,19 @@ export async function confirmResetMemberPassword(request: Request, response: Res
     }
 
     // Verify the token and extract the member ID
-    const memberId = jwt.verify(token, process.env.JWT_SECRET, (err: VerifyErrors | null, decoded: any) => {
-      if (err) {
-        return response
-          .header('Authorization', '')
-          .clearCookie('refreshToken', CLEAR_COOKIE_SETTINGS)
-          .status(401)
-          .json({ error: 'Invalid or expired token' });
-      }
 
-      return decoded.memberId;
-    });
-
-    if (memberId === undefined) {
-      return response.status(404).json({ message: 'Member not found' });
+    let decoded: JwtPayload;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+    } catch (err) {
+      return response
+        .header('Authorization', '')
+        .clearCookie('refreshToken', CLEAR_COOKIE_SETTINGS)
+        .status(401)
+        .json({ message: 'Invalid or expired token' });
     }
 
+    const memberId = parseInt(decoded.memberId, 10);
     const memberContent = await prismaClient.member.findUnique({ where: { id: memberId } });
 
     if (isEmpty(memberContent)) {

@@ -1,7 +1,7 @@
 import { category, measurementsystem, measurementtype, measurementunit, theme } from '@prisma/client';
 import { Request, Response } from 'express';
 
-import { prismaClient } from '@/utils/client';
+import prismaClient from '@/utils/client';
 import { logger } from '@/utils/logger';
 
 export async function getCategories(_: Request, response: Response): Promise<Response<category[]>> {

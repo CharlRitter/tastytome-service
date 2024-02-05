@@ -24,7 +24,7 @@ export async function authenticateMember(request: Request, response: Response, n
     const newJwtToken = jwt.sign({ memberId: decodedCookie.memberId }, process.env.JWT_SECRET, {
       expiresIn: '1h'
     });
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET) as JwtPayload;
+    const decodedToken = jwt.verify(newJwtToken, process.env.JWT_SECRET) as JwtPayload;
 
     response.header('Authorization', `Bearer ${newJwtToken}`);
     request.memberId = parseInt(decodedToken.memberId, 10);

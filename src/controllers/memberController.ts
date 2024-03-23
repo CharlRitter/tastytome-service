@@ -5,7 +5,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken';
 import { isEmpty } from 'lodash';
 
 import { CLEAR_COOKIE_SETTINGS, COOKIE_SETTINGS } from '@/constants/jwt';
-import { Error } from '@/types/controllers';
+import { Error } from '@/types/common';
 import prismaClient from '@/utils/client';
 import { logger } from '@/utils/logger';
 

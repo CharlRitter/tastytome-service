@@ -2,16 +2,9 @@ import { Prisma, recipe, recipeingredient, recipetimer } from '@prisma/client';
 import { Request, Response } from 'express';
 import { isEmpty } from 'lodash';
 
-import { Error } from '@/types/controllers';
+import { Error, Recipe } from '@/types/common';
 import prismaClient from '@/utils/client';
 import { logger } from '@/utils/logger';
-
-type Recipe = recipe & {
-  recipecategories: number[];
-  recipeingredients: recipeingredient[];
-  recipeinstructions: string[];
-  recipetimers: recipetimer[];
-};
 
 export async function getRecipes(request: Request, response: Response): Promise<Response<Recipe[] | Error>> {
   try {

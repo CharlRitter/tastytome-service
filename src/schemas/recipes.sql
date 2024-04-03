@@ -3,7 +3,7 @@ CREATE TABLE Recipe (
   id SERIAL PRIMARY KEY,
   memberId INT NOT NULL,
   title VARCHAR(100) NOT NULL,
-  description VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
   image VARCHAR(255),
   rating INT DEFAULT 0,
   effort INT DEFAULT 0,
@@ -28,7 +28,7 @@ CREATE TABLE RecipeCategory (
 CREATE TABLE RecipeInstruction (
   id SERIAL PRIMARY KEY,
   recipeId INT NOT NULL,
-  title VARCHAR(100) NOT NULL,
+  title TEXT NOT NULL,
   createdAt TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (recipeId) REFERENCES Recipe(id) ON DELETE CASCADE
 );
@@ -37,7 +37,7 @@ CREATE TABLE RecipeInstruction (
 CREATE TABLE RecipeTimer (
   id SERIAL PRIMARY KEY,
   recipeId INT NOT NULL,
-  title VARCHAR(100) NOT NULL,
+  title TEXT NOT NULL,
   hours INT,
   minutes INT,
   createdAt TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -48,7 +48,7 @@ CREATE TABLE RecipeTimer (
 CREATE TABLE RecipeIngredient (
   id SERIAL PRIMARY KEY,
   recipeId INT NOT NULL,
-  title VARCHAR(100) NOT NULL,
+  title TEXT NOT NULL,
   measurementTypeId INT NOT NULL,
   measurementUnitId INT NOT NULL,
   measurementAmount FLOAT NOT NULL,

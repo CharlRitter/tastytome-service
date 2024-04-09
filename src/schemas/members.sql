@@ -15,15 +15,12 @@ CREATE TABLE MemberSettings (
   id SERIAL PRIMARY KEY,
   memberId INT UNIQUE NOT NULL,
   themeId INT NOT NULL DEFAULT 1,
-  measurementSystemId INT NOT NULL DEFAULT 1,
   usePantry BOOLEAN NOT NULL DEFAULT TRUE,
   useNegativePantry BOOLEAN NOT NULL DEFAULT FALSE,
-  displayNutritionalInformation BOOLEAN NOT NULL DEFAULT TRUE,
   createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   editedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (memberId) REFERENCES Member (id) ON DELETE CASCADE,
   FOREIGN KEY (theme) REFERENCES Theme (id),
-  FOREIGN KEY (measurementSystem) REFERENCES MeasurementSystem (id)
 );
 
 -- Functions

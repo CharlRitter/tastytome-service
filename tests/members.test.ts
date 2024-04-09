@@ -26,10 +26,8 @@ describe('Members', () => {
   const mockMemberSettings: membersettings = {
     id: 1,
     themeid: 1,
-    measurementsystemid: 1,
     usepantry: true,
     usenegativepantry: true,
-    displaynutritionalinformation: true,
     memberid: 1,
     createdat: new Date(),
     editedat: new Date()
@@ -539,8 +537,7 @@ describe('Members', () => {
       theme: 2,
       measurementsystem: 1,
       usepantry: true,
-      usenegativepantry: true,
-      displaynutritionalinformation: true
+      usenegativepantry: true
     };
     const request = mockRequest({ ...baseRequestData, body: requestData });
 
@@ -557,8 +554,7 @@ describe('Members', () => {
       theme: 2,
       measurementsystem: 1,
       usepantry: true,
-      usenegativepantry: true,
-      displaynutritionalinformation: true
+      usenegativepantry: true
     };
     const request = mockRequest({ ...baseRequestData, body: requestData });
 
@@ -576,8 +572,7 @@ describe('Members', () => {
       theme: 2,
       measurementsystem: 1,
       usepantry: true,
-      usenegativepantry: true,
-      displaynutritionalinformation: true
+      usenegativepantry: true
     };
     const request = mockRequest({ ...baseRequestData, body: requestData });
     const tempMockMember = cloneDeep(mockMember);
@@ -598,8 +593,7 @@ describe('Members', () => {
       theme: 2,
       measurementsystem: 1,
       usepantry: true,
-      usenegativepantry: true,
-      displaynutritionalinformation: true
+      usenegativepantry: true
     };
     const request = mockRequest({ ...baseRequestData, body: requestData });
 

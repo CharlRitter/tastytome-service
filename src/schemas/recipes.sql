@@ -4,14 +4,12 @@ CREATE TABLE Recipe (
   memberId INT NOT NULL,
   title VARCHAR(100) NOT NULL,
   description TEXT NOT NULL,
-  image VARCHAR(255),
+  image VARCHAR(2083),
   rating INT DEFAULT 0,
   effort INT DEFAULT 0,
-  measurementSystemId INT NOT NULL,
   createdAt TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
   editedAt TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (memberId) REFERENCES Member(id) ON DELETE CASCADE,
-  FOREIGN KEY (measurementSystemId) REFERENCES MeasurementSystem(id)
 );
 
 -- RecipeCategories Table

@@ -47,9 +47,10 @@ export async function getRecipes(request: Request, response: Response): Promise<
     const recipes = await prismaClient.recipe.findMany({
       where: { AND: whereConditions },
       include: {
-        measurementsystem: true,
         recipecategory: { include: { category: true } },
-        recipeingredient: { include: { measurementtype: true, measurementunit: true } },
+        recipeingredient: {
+          include: { measurementtype: true, measurementunit: true }
+        },
         recipeinstruction: true,
         recipetimer: true
       },
@@ -73,9 +74,10 @@ export async function getRecipe(request: Request, response: Response): Promise<R
     const recipeContent = await prismaClient.recipe.findUnique({
       where: { id: recipeId },
       include: {
-        measurementsystem: true,
         recipecategory: { include: { category: true } },
-        recipeingredient: { include: { measurementtype: true, measurementunit: true } },
+        recipeingredient: {
+          include: { measurementtype: true, measurementunit: true }
+        },
         recipeinstruction: true,
         recipetimer: true
       }
@@ -111,7 +113,6 @@ export async function createRecipe(request: Request, response: Response): Promis
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
-        measurementsystemid: 'integer',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }]',
@@ -122,13 +123,7 @@ export async function createRecipe(request: Request, response: Response): Promis
       return response.status(200).json({ data: schema });
     }
 
-    const requiredFields: Array<keyof Recipe> = [
-      'title',
-      'description',
-      'measurementsystemid',
-      'recipeingredients',
-      'recipeinstructions'
-    ];
+    const requiredFields: Array<keyof Recipe> = ['title', 'description', 'recipeingredients', 'recipeinstructions'];
     const missingFields = requiredFields.filter((field) => !(field in fullRecipeData));
 
     if (missingFields.length > 0) {
@@ -191,7 +186,7 @@ export async function createRecipe(request: Request, response: Response): Promis
       throw new Error();
     }
 
-    const { title, description, image, rating, effort, measurementsystemid } = recipeData;
+    const { title, description, image, rating, effort } = recipeData;
 
     await prismaClient.$transaction(async (transactionPrisma) => {
       const newRecipe = await transactionPrisma.recipe.create({
@@ -201,8 +196,7 @@ export async function createRecipe(request: Request, response: Response): Promis
           description,
           image,
           rating,
-          effort,
-          measurementsystemid
+          effort
         }
       });
 
@@ -255,7 +249,6 @@ export async function updateRecipe(request: Request, response: Response): Promis
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
-        measurementsystemid: 'integer (optional)',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }] (optional)',
@@ -330,14 +323,13 @@ export async function updateRecipe(request: Request, response: Response): Promis
     }
 
     await prismaClient.$transaction(async (transactionPrisma) => {
-      const { title, description, rating, effort, measurementsystemid } = recipeData;
+      const { title, description, rating, effort } = recipeData;
       const data: Partial<recipe> = {};
 
       if (title) data.title = title;
       if (description) data.description = description;
       if (rating) data.rating = rating;
       if (effort) data.effort = effort;
-      if (measurementsystemid) data.measurementsystemid = measurementsystemid;
 
       const updatedRecipe = await transactionPrisma.recipe.update({
         where: { id: recipeId },

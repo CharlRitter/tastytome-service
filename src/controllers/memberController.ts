@@ -18,7 +18,7 @@ export async function getMember(request: Request, response: Response): Promise<R
     const { memberId } = request;
     const memberContent = await prismaClient.member.findUnique({
       where: { id: memberId },
-      include: { membersettings: { include: { measurementsystem: true, theme: true } } }
+      include: { membersettings: { include: { theme: true } } }
     });
 
     if (isEmpty(memberContent)) {
@@ -305,10 +305,8 @@ export async function updateMemberSettings(request: Request, response: Response)
     if (!memberSettingsData) {
       const schema = {
         theme: 'integer (optional)',
-        measurementsystem: 'integer (optional)',
         usepantry: 'boolean (optional)',
-        usenegativepantry: 'boolean (optional)',
-        displaynutritionalinformation: 'boolean (optional)'
+        usenegativepantry: 'boolean (optional)'
       };
 
       return response.status(200).json({ data: schema });
@@ -336,10 +334,8 @@ export async function updateMemberSettings(request: Request, response: Response)
       where: { id: memberSettingsId },
       data: {
         themeid: memberSettingsData.themeid,
-        measurementsystemid: memberSettingsData.measurementsystemid,
         usepantry: memberSettingsData.usepantry,
-        usenegativepantry: memberSettingsData.usenegativepantry,
-        displaynutritionalinformation: memberSettingsData.displaynutritionalinformation
+        usenegativepantry: memberSettingsData.usenegativepantry
       }
     });
 

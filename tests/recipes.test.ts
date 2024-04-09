@@ -221,7 +221,6 @@ describe('Recipes Controller', () => {
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
-        measurementsystemid: 'integer',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }]',
@@ -311,7 +310,6 @@ describe('Recipes Controller', () => {
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
-        measurementsystemid: 'integer (optional)',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }] (optional)',
@@ -352,7 +350,6 @@ describe('Recipes Controller', () => {
     const localbaseRequestData = cloneDeep(baseRequestData);
     localbaseRequestData.memberId = 2;
     const request = mockRequest({ ...localbaseRequestData, body: thisbaseRequestData });
-
 
     prismaMock.recipe.findUnique.mockResolvedValue(mockRecipe);
 

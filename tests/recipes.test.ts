@@ -16,8 +16,8 @@ const mockRecipe: recipe = {
   description: 'Cool Description',
   rating: 5,
   effort: 4,
+  bookmarked: false,
   image: '',
-  measurementsystemid: 1,
   createdat: new Date(),
   editedat: new Date()
 };
@@ -45,6 +45,7 @@ describe('Recipes Controller', () => {
         description: 'Cool Description',
         rating: 5,
         effort: 4,
+        bookmarked: false,
         image: '',
         measurementsystemid: 1,
         createdat: new Date(),
@@ -221,6 +222,7 @@ describe('Recipes Controller', () => {
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
+        bookmarked: 'boolean (optional)',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }]',
@@ -310,6 +312,7 @@ describe('Recipes Controller', () => {
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
+        bookmarked: 'boolean (optional)',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }] (optional)',

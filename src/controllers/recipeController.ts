@@ -54,7 +54,14 @@ export async function getRecipes(request: Request, response: Response): Promise<
         recipeinstruction: true,
         recipetimer: true
       },
-      orderBy: [{ createdat: orderBy }],
+      orderBy: [
+        {
+          bookmarked: 'desc'
+        },
+        {
+          createdat: orderBy
+        }
+      ],
       skip,
       take: pageSize
     });
@@ -113,6 +120,7 @@ export async function createRecipe(request: Request, response: Response): Promis
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
+        bookmarked: 'boolean (optional)',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }]',
@@ -186,7 +194,7 @@ export async function createRecipe(request: Request, response: Response): Promis
       throw new Error();
     }
 
-    const { title, description, image, rating, effort } = recipeData;
+    const { title, description, image, rating, effort, bookmarked } = recipeData;
 
     await prismaClient.$transaction(async (transactionPrisma) => {
       const newRecipe = await transactionPrisma.recipe.create({
@@ -196,7 +204,8 @@ export async function createRecipe(request: Request, response: Response): Promis
           description,
           image,
           rating,
-          effort
+          effort,
+          bookmarked
         }
       });
 
@@ -249,6 +258,7 @@ export async function updateRecipe(request: Request, response: Response): Promis
         image: 'string | File (optional)',
         rating: 'integer (optional)',
         effort: 'integer (optional)',
+        bookmarked: 'boolean (optional)',
         recipecategories: 'integer[] (optional)',
         recipeingredients:
           '[{ title: string, measurementtypeid: integer, measurementunitid: integer, measurementamount: float }] (optional)',
@@ -323,13 +333,14 @@ export async function updateRecipe(request: Request, response: Response): Promis
     }
 
     await prismaClient.$transaction(async (transactionPrisma) => {
-      const { title, description, rating, effort } = recipeData;
+      const { title, description, rating, effort, bookmarked } = recipeData;
       const data: Partial<recipe> = {};
 
       if (title) data.title = title;
       if (description) data.description = description;
       if (rating) data.rating = rating;
       if (effort) data.effort = effort;
+      if (bookmarked !== undefined) data.bookmarked = bookmarked;
 
       const updatedRecipe = await transactionPrisma.recipe.update({
         where: { id: recipeId },

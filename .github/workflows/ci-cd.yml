@@ -1,0 +1,80 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+jobs:
+  test:
+    name: Run Tests
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Run Jest tests
+        run: yarn test
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: jest-test-results
+          path: ./coverage
+          retention-days: 30
+
+      - name: Confirm repo builds
+        run: yarn build
+
+  build_and_upload:
+    name: Build and Upload Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    env:
+      VERSION_FILE_PATH: ./version.txt
+      DOCKER_IMAGE_NAME: iohk-frontend-technical-assessment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Read version from file
+        id: read_version
+        run: echo "::set-output name=VERSION::$(cat $VERSION_FILE_PATH)"
+
+      - name: Build Docker image
+        run: |
+          if [ ${{ github.ref }} == 'refs/heads/main' ]; then
+            docker build -t $DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }} .
+          elif [ ${{ github.ref }} == 'refs/heads/develop' ]; then
+            docker build -t $DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }}-beta .
+          fi
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        run: |
+          if [ ${{ github.ref }} == 'refs/heads/main' ]; then
+            docker tag $DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }} ${{ secrets.DOCKER_USERNAME }}/$DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }}
+            docker push ${{ secrets.DOCKER_USERNAME }}/$DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }}
+          elif [ ${{ github.ref }} == 'refs/heads/develop' ]; then
+            docker tag $DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }}-beta ${{ secrets.DOCKER_USERNAME }}/$DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }}-beta
+            docker push ${{ secrets.DOCKER_USERNAME }}/$DOCKER_IMAGE_NAME:${{ steps.read_version.outputs.VERSION }}-beta
+          fi

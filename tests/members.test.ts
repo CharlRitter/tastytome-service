@@ -463,6 +463,7 @@ describe('Members', () => {
     await confirmResetMemberPassword(request, response);
 
     expect(response.status).toHaveBeenCalledWith(204);
+    expect(response.json).toHaveBeenCalledWith({ message: 'Password successfully reset' });
   });
 
   it('should handle error when token is missing while confirming reset member password', async () => {
@@ -528,7 +529,7 @@ describe('Members', () => {
     await confirmResetMemberPassword(request, response);
 
     expect(response.status).toHaveBeenCalledWith(500);
-    expect(response.json).toHaveBeenCalledWith({ message: 'Error updating password' });
+    expect(response.json).toHaveBeenCalledWith({ message: 'Error confirming reset password' });
   });
 
   it('should update member settings', async () => {

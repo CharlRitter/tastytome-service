@@ -2,6 +2,7 @@ import { member, membersettings } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import { isEmpty } from 'lodash';
 
 import { CLEAR_COOKIE_SETTINGS, COOKIE_SETTINGS } from '@/constants/jwt';
@@ -243,7 +244,33 @@ export async function resetMemberPassword(request: Request, response: Response):
       return response.status(404).json({ message: 'Member not found' });
     }
 
-    // TODO Implement password reset logic here (generate token and send email)
+    const token = jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const isProduction = process.env.NODE_ENV === 'production';
+    const transporter = nodemailer.createTransport({
+      host: 'live.smtp.mailtrap.io', //TODO
+      port: 587,
+      secure: false, // use SSL
+      auth: {
+        user: '', //TODO
+        pass: '' //TODO
+      }
+    });
+    const mailOptions = {
+      from: 'no-reply@tastytome.com',
+      to: emailaddress,
+      subject: 'Password Reset',
+      text:
+        `Hi ${memberContent.firstname}!\n\n` +
+        `We are contacting you because we received a password reset request for your account. The link below will take you to the password reset page. This link will expire in 1 hour. If you didn’t make this request, simply ignore this email.\n\n` +
+        `${isProduction ? 'https://tastytome.com' : 'http://localhost:3000'}/reset-password/${token}\n\n` +
+        `Have a great day!`
+    };
+
+    await transporter.sendMail(mailOptions, (error) => {
+      if (error) {
+        return response.status(500).json({ message: 'Error sending email' });
+      }
+    });
 
     return response.status(204).json();
   } catch (error: any) {
@@ -290,11 +317,17 @@ export async function confirmResetMemberPassword(request: Request, response: Res
       data: { password: newPasswordHash }
     });
 
-    return response.status(204).json();
+    const jwtToken = `Bearer ${jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '1h' })}`;
+    const refreshToken = jwt.sign({ memberId: memberContent.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    response.header('Authorization', jwtToken);
+    response.cookie('refreshToken', refreshToken, COOKIE_SETTINGS);
+    return response
+      .status(204)
+      .json({ message: 'Password successfully reset' });
   } catch (error: any) {
     logger.error(error);
-
-    return response.status(500).json({ message: 'Error updating password' });
+    return response.status(500).json({ message: 'Error confirming reset password' });
   }
 }
 

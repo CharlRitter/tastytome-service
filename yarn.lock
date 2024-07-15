@@ -22,9 +22,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/cli@npm:^7.24.7":
-  version: 7.24.7
-  resolution: "@babel/cli@npm:7.24.7"
+"@babel/cli@npm:^7.24.8":
+  version: 7.24.8
+  resolution: "@babel/cli@npm:7.24.8"
   dependencies:
     "@jridgewell/trace-mapping": ^0.3.25
     "@nicolo-ribaudo/chokidar-2": 2.1.8-no-fsevents.3
@@ -45,7 +45,7 @@ __metadata:
   bin:
     babel: ./bin/babel.js
     babel-external-helpers: ./bin/babel-external-helpers.js
-  checksum: 40dfde8062de913dc5bb1c65a4d4e88ec2c438f16387c5552b1f8b0524f8af454c3b7bf12364ca0da8509c5edafdabc1527a939587678dc7825659c38d357c1d
+  checksum: 8a1fb83d0c2959b6a83cccab55ac1b0ffd408e1959369609071dadb38c1dc99a501d58751b6e4f0c43b751e595e9868856433b01832a19f592f004dd854a8c1f
   languageName: node
   linkType: hard
 
@@ -8615,9 +8615,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lint-staged@npm:^15.2.5":
-  version: 15.2.5
-  resolution: "lint-staged@npm:15.2.5"
+"lint-staged@npm:^15.2.7":
+  version: 15.2.7
+  resolution: "lint-staged@npm:15.2.7"
   dependencies:
     chalk: ~5.3.0
     commander: ~12.1.0
@@ -8631,7 +8631,7 @@ __metadata:
     yaml: ~2.4.2
   bin:
     lint-staged: bin/lint-staged.js
-  checksum: 3025868d965eb401a5ebd903abd70cfebb8dbeb41eea1020c316f9c8c79083ea203f6cef95d32bfa8c9ec5486392b4ed08632ace6a5347b69cf238ba00e178f0
+  checksum: 0f21d1b44c046fcfc0388dab66d45d244818afdb24bdf57e7593640c7ca82cc55be7d75e086708e453fac0c0d9ab8760b2cde053944f7b2121c2dd65f6367ffe
   languageName: node
   linkType: hard
 
@@ -10579,12 +10579,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.2.5":
-  version: 3.2.5
-  resolution: "prettier@npm:3.2.5"
+"prettier@npm:^3.3.3":
+  version: 3.3.3
+  resolution: "prettier@npm:3.3.3"
   bin:
     prettier: bin/prettier.cjs
-  checksum: 2ee4e1417572372afb7a13bb446b34f20f1bf1747db77cf6ccaf57a9be005f2f15c40f903d41a6b79eec3f57fff14d32a20fb6dee1f126da48908926fe43c311
+  checksum: bc8604354805acfdde6106852d14b045bb20827ad76a5ffc2455b71a8257f94de93f17f14e463fe844808d2ccc87248364a5691488a3304f1031326e62d9276e
   languageName: node
   linkType: hard
 
@@ -12077,7 +12077,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "tastytome-service@workspace:."
   dependencies:
-    "@babel/cli": ^7.24.7
+    "@babel/cli": ^7.24.8
     "@babel/core": ^7.24.6
     "@babel/plugin-proposal-class-properties": ^7.18.6
     "@babel/preset-env": ^7.24.6
@@ -12116,13 +12116,13 @@ __metadata:
     jest: ^29.7.0
     jest-mock-extended: ^3.0.7
     jsonwebtoken: ^9.0.2
-    lint-staged: ^15.2.5
+    lint-staged: ^15.2.7
     lodash: ^4.17.21
     nodemailer: ^6.9.14
     nodemon: ^3.1.4
     pg: ^8.11.5
     pinst: ^3.0.0
-    prettier: ^3.2.5
+    prettier: ^3.3.3
     prisma: latest
     semantic-release: ^24.0.0
     sort-package-json: ^2.10.0

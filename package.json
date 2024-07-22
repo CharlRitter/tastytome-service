@@ -63,7 +63,7 @@
     "babel-plugin-module-resolver": "^5.0.2",
     "commitizen": "^4.3.0",
     "concurrently": "^8.2.2",
-    "eslint": "^9.6.0",
+    "eslint": "^9.7.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^9.1.0",

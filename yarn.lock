@@ -9636,10 +9636,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nodemailer@npm:^6.9.16":
-  version: 6.9.16
-  resolution: "nodemailer@npm:6.9.16"
-  checksum: a031d243914ab5a3bb48c75e1fab02d25fb45c2b5b9bc15569cce45ec851235bc970087de99477ca6e7ee88fab2cb6a590a714af310f58532dbcc31396f68b1c
+"nodemailer@npm:^7.0.7":
+  version: 7.0.9
+  resolution: "nodemailer@npm:7.0.9"
+  checksum: b912ad8bafcf6c58ccc5b158a5794f13e6178d8473d167078412ec2a6d90dac52125c9cc9c4722d6f05c91c7f20303ce885af4aa37b4ca10c99e763a58b9feb5
   languageName: node
   linkType: hard
 
@@ -12353,7 +12353,7 @@ __metadata:
     jsonwebtoken: ^9.0.2
     lint-staged: ^15.2.10
     lodash: ^4.17.21
-    nodemailer: ^6.9.16
+    nodemailer: ^7.0.7
     nodemon: ^3.1.7
     pg: ^8.13.1
     pinst: ^3.0.0

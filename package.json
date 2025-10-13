@@ -37,7 +37,7 @@
     "jest-mock-extended": "^3.0.7",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^7.0.9",
     "pg": "^8.13.1"
   },
   "devDependencies": {
@@ -55,7 +55,7 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/lodash": "^4.17.13",
     "@types/node": "^22.8.6",
-    "@types/nodemailer": "^6.4.16",
+    "@types/nodemailer": "^7.0.2",
     "@types/pg": "^8.11.10",
     "@typescript-eslint/eslint-plugin": "^8.12.2",
     "@typescript-eslint/parser": "^8.12.2",
